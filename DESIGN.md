@@ -1,5 +1,27 @@
 # FiorinoPrego - Design choices
 
+## System architecture
+
+```mermaid
+flowchart LR
+    U[User]
+    P[Program]
+
+    subgraph FS[Filesystem]
+        direction TB
+        K[Encrypted keys]
+        F[Files]
+    end
+
+    U -->|primary password| P
+    K -->|read/write encrypted keys| P
+    P -->|read / write files| F
+```
+
+## Threat model
+
+
+
 ## Chosen technology stack
 
 As this application is meant to work on Linux, a tech stack that I am familiar with and that I believe to be appropriate for the challenge includes...
@@ -18,5 +40,6 @@ I want to link dynamically against OpenSSL as I know that realistically I won't 
 
 ## Reminders to self
 
+- maybe SELinux policy?
 - don't hardcode `gcc` in build scripts
 ![Don't hardcode gcc in build scripts](images/ifYouHardcode.png)
