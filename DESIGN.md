@@ -13,6 +13,7 @@ flowchart LR
         F[Files]
     end
 
+    U -->|authenticated user session| P
     U -->|primary password| P
     K -->|read/write encrypted keys| P
     P -->|read / write files| F
@@ -20,7 +21,55 @@ flowchart LR
 
 ## Threat model
 
+> [!NOTE]
+> TODO
 
+This section presents some modeled threats, derived from the STRIDE identification method, and their respective mitigations.
+
+Some things to remember are that:
+- concealing the content of a file is a security requirement, while its size being leaked is not a concern
+- the focus of this project is on security rather than on usability, so the aim is to maximize security while retaining usability, rather than vice versa
+
+### Spoofing
+
+Threats.
+
+- someone stealing a valid terminal session
+- someone stealing a valid user credentials set
+- someone stealing the primary password for a vault of files
+
+Safeguards.
+
+- least privilege: one given user only has access to its own files
+- defence in depth: stealing a user account is not sufficient, a primary password is needed to decrypt a vault too
+  - one measure is enforced by the kernel, the other one by the user's memory
+
+### Tampering
+
+This category considers security at rest.
+
+Threats.
+
+- destroying the memory where the encrypted files live
+- unintentionally overwriting an encrypted file
+- tampering with the files in their encrypted form
+
+Safeguards.
+
+- per-user configurable mirrors on different partitions
+  - including different disks and NFS
+- confirmation dialogs in the user interface
+- gpg signatures for integrity
+
+## User interface
+
+> [!NOTE]
+> TODO
+
+## Application program interface
+
+> [!NOTE]
+> TODO
 
 ## Chosen technology stack
 
@@ -35,6 +84,9 @@ As this application is meant to work on Linux, a tech stack that I am familiar w
   - v3.5 is the LTS release supported until 2030, shipped by default on most distros
   - I will try my best for compatibility with LibreSSL, as [many prefer it](https://security.stackexchange.com/a/112546/336325) for historical reasons and it is installed by default on MacOS, OpenBSD and other BSD-family operating systems
   - I can enforce OpenSSL backwards compatibility by `-DOPENSSL_API_COMPAT=0x30000000L`
+- GnuPG v2.0+
+  - GnuPG Made Easy as a C API
+  - digital signature [[docs]](https://www.gnupg.org/documentation/manuals/gpgme/Creating-a-Signature.html)
 
 I want to link dynamically against OpenSSL as I know that realistically I won't be able to keep up with every OpenSSL vulnerability.
 
