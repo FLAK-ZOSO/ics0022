@@ -22,7 +22,7 @@ A vault is essentially a subdirectory where encrypted files are stored all under
 ~/.fiorino/vault2/keys/file4.txt.key
 ```
 
-In this example, the first two files are encrypted under one primary key (well, their keys are)
+In this example, the first two files are encrypted under one primary key (well, their keys are encrypted with the primary key), and the other ones are under a second key.
 
 ```bash
 fiorino decrypt --vault vault2 --files file3.txt file4.txt

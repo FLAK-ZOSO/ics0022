@@ -120,11 +120,17 @@ Safeguards.
 Threats.
 
 - program crashing during I/O operations
+- concurrent writing to files
 
 Safeguards.
 
 - signal handling
 - never overwriting encrypted files, rather writing the new version and then atomically "move" on top
+- file locking
+
+See these slides in week 3 materials.
+> Creating Files Without Replacing Existing Ones
+> Exclusive Access and File Locking
 
 ## User interface
 
