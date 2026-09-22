@@ -59,7 +59,55 @@ Safeguards.
 - per-user configurable mirrors on different partitions
   - including different disks and NFS
 - confirmation dialogs in the user interface
-- gpg signatures for integrity
+- HMAC for integrity
+
+### Repudiation
+
+Threats.
+
+- exploitation attempt left untraceable, or accountability missing
+- logs manipulated
+- logs destroyed
+
+Safeguards.
+
+- system logging
+- system logging with [FSS](https://learn.netdata.cloud/docs/logs-management/systemd-journal-logs/forward-secure-sealing-fss-in-systemd-journal)
+  - where it is supported, I guess we can configure it as an optional feature enabled by default
+- logs shipped off-machine through Rsyslog
+  - where it is enabled, make it a shipped configuration by default
+
+### Information disclosure
+
+Consider that the plaintext contents of the encrypted files are the direct information we strive to protect, while for the passwords and keys the confidentiality is rather needed indirectly to protect the rest of the system.
+
+Threats.
+
+- plaintext file recovered
+
+Safeguards.
+
+- safe memory management (of passwords, keys and files)
+- strong, audited cryptography (FIPS standards implemented in OpenSSL) for security at rest
+
+### Denial of service
+
+Threats.
+
+- excessive allocation of disk space
+- excessive allocation of memory space
+- excessive encryption requests, exhausting compute time
+
+Safeguards.
+
+- verification of free space availability in the destination filesystem and in the mirrors
+- baked-in (at compile time) file size limit
+- a system wide lock (or semaphore?) to prevent too many concurrent encryptions/decryptions
+
+### Elevation of privileges
+
+> [!NOTE]
+> TODO
 
 ## User interface
 
@@ -84,9 +132,9 @@ As this application is meant to work on Linux, a tech stack that I am familiar w
   - v3.5 is the LTS release supported until 2030, shipped by default on most distros
   - I will try my best for compatibility with LibreSSL, as [many prefer it](https://security.stackexchange.com/a/112546/336325) for historical reasons and it is installed by default on MacOS, OpenBSD and other BSD-family operating systems
   - I can enforce OpenSSL backwards compatibility by `-DOPENSSL_API_COMPAT=0x30000000L`
-- GnuPG v2.0+
+<!-- - GnuPG v2.0+
   - GnuPG Made Easy as a C API
-  - digital signature [[docs]](https://www.gnupg.org/documentation/manuals/gpgme/Creating-a-Signature.html)
+  - digital signature [[docs]](https://www.gnupg.org/documentation/manuals/gpgme/Creating-a-Signature.html) -->
 
 I want to link dynamically against OpenSSL as I know that realistically I won't be able to keep up with every OpenSSL vulnerability.
 
