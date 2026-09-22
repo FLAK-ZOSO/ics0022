@@ -193,5 +193,6 @@ I want to link dynamically against OpenSSL as I know that realistically I won't 
 ## Reminders to self
 
 - maybe SELinux policy?
+- use the [Fil-C compiler](https://fil-c.org/) for security testing
 - don't hardcode `gcc` in build scripts
 ![Don't hardcode gcc in build scripts](images/ifYouHardcode.png)
