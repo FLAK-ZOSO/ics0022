@@ -21,9 +21,6 @@ flowchart LR
 
 ## Threat model
 
-> [!NOTE]
-> TODO
-
 This section presents some modeled threats, derived from the STRIDE identification method, and their respective mitigations.
 
 Some things to remember are that:
@@ -85,12 +82,14 @@ Threats.
 
 - plaintext file recovered
 - list files belonging to another user
+- weak keys/passwords
 
 Safeguards.
 
 - safe memory management (of passwords, keys and files)
   - strong, audited cryptography (FIPS standards implemented in OpenSSL) for security at rest
 - UNIX permissions/ACLs
+- passwords have an entropy requirement and primary keys are derived with PBKDF2
 
 ### Denial of service
 
@@ -129,8 +128,37 @@ Safeguards.
 
 ## User interface
 
+```bash
+fiorino encrypt --vault default --files ./file1.txt ./file2.jpeg
+```
+
+- these will be stored as `file1.txt.enc` and `file2.jpeg.enc` alongside a key for each
+- the user will be prompted for a password, or a password can be piped through stdin
+- unless differently specified with `--no-push`, this will push files and keys to all active mirrors
+
+```bash
+fiorino decrypt --vault default --files file1.txt file2.jpeg
+```
+
+- these will be decrypted from `file1.txt.enc` and `file2.jpeg.enc`
+- if keys or files are unavailable in the main storage, they will be retrieved from the latest modified file from any (active?) mirror
+
+### Side functionality
+
 > [!NOTE]
 > TODO
+
+- configure a mirror
+- activate/deactivate a mirror
+- create/destroy a vault
+- remove a file from a vault
+- verify the configuration
+- list the files in a vault
+- list the vaults
+
+## Configuration
+
+Configuration, was any to be needed, will live in `/etc/fiorino.conf`.
 
 ## Application program interface
 
