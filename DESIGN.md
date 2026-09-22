@@ -84,11 +84,13 @@ Consider that the plaintext contents of the encrypted files are the direct infor
 Threats.
 
 - plaintext file recovered
+- list files belonging to another user
 
 Safeguards.
 
 - safe memory management (of passwords, keys and files)
-- strong, audited cryptography (FIPS standards implemented in OpenSSL) for security at rest
+  - strong, audited cryptography (FIPS standards implemented in OpenSSL) for security at rest
+- UNIX permissions/ACLs
 
 ### Denial of service
 
@@ -106,8 +108,24 @@ Safeguards.
 
 ### Elevation of privileges
 
-> [!NOTE]
-> TODO
+Threats.
+
+- privilege escalation to root
+
+Safeguards.
+
+- never running as root, always as the invoking user
+
+### Information loss
+
+Threats.
+
+- program crashing during I/O operations
+
+Safeguards.
+
+- signal handling
+- never overwriting encrypted files, rather writing the new version and then atomically "move" on top
 
 ## User interface
 
