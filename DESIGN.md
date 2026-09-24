@@ -169,7 +169,7 @@ Configuration, was any to be needed, will live in `/etc/fiorino.conf`.
 ## Application program interface
 
 > [!NOTE]
-> TODO
+> TODO; refer to [`fiorino.h`](src/fiorino.h)
 
 ## Chosen technology stack
 
