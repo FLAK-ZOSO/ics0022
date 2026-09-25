@@ -9,11 +9,11 @@ build lib:
 build/%.o: src/%.c src/%.h | build
 	cc $(CCFLAGS) -fPIC -c -o $@ $<
 
-lib/%.so: build/%.o | lib
-	cc $< -shared -o $@
+lib/fiorino.so: build/fiorino.o build/encrypt.o | lib
+	cc -shared -o $@ $^ -lcrypto
 
-lib/%.a: %.a | lib
-	ar rcs $@ $<
+lib/fiorino.a: build/fiorino.o build/encrypt.o | lib
+	ar rcs $@ $^
 
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:
