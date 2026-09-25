@@ -10,10 +10,7 @@ lib/%.a: %.a
 	ar rcs $@ $<
 
 directories:
-	mkdir -p bin
-	mkdir -p build
-	mkdir -p include
-	mkdir -p lib
+	$(shell mkdir -p bin build include lib)
 
 all: directories lib/fiorino.so
 
@@ -24,4 +21,4 @@ all: directories lib/fiorino.so
 # https://stackoverflow.com/a/80005641/15888601
 # https://stackoverflow.com/a/1951024/15888601
 
-.PHONY: all
+.PHONY: all directories
