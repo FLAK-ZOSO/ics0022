@@ -8,6 +8,7 @@
  *          thus we may want to use AES-256-GCM
  * \see https://csrc.nist.gov/pubs/sp/800/38/a/final
  * \see https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
+ * \todo on error exit there has to be cleanup, currently there isn't
  */
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
             unsigned char *iv, unsigned char *ciphertext);
@@ -17,6 +18,7 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
  *          thus we may want to use AES-256-GCM
  * \see https://csrc.nist.gov/pubs/sp/800/38/a/final
  * \see https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
+ * \todo on error exit there has to be cleanup, currently there isn't
  */
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
             unsigned char *iv, unsigned char *plaintext);
