@@ -9,13 +9,11 @@ flowchart LR
 
     subgraph FS[Filesystem]
         direction TB
-        K[Encrypted keys]
         F[Files]
     end
 
     U -->|authenticated user session| P
     U -->|primary password| P
-    K -->|read/write encrypted keys| P
     P -->|read / write files| F
 ```
 
