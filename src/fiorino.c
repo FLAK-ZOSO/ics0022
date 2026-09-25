@@ -52,7 +52,7 @@ int decrypt_file(struct Vault* vault, char* file) {
     long long fsize = file_size(f);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     const unsigned char* contents = malloc(fsize + 1);
-    fread(contents, fsize, fsize, file);
+    fread(contents, fsize, fsize, f);
     /// \todo this would be a blunder, as padding is a thing
     const unsigned char* ciphertext = malloc(fsize + 1);
     const unsigned char* key = malloc(256);
@@ -66,7 +66,7 @@ int decrypt_file(struct Vault* vault, char* file) {
     rc = PKCS5_PBKDF2_HMAC( 
         vault->passphrase, -1,
         salt, FIORINO_PBKDF2_SALT_SIZE,
-        FIORINO_PBKDF2_ITERATIONS, EVP_sha256,
+        FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
         FIORINO_KEY_SIZE, key
     );
     if (rc == 0) return 2;
