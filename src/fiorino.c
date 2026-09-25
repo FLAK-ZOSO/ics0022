@@ -1,4 +1,6 @@
 #include <fiorino.h>
+#include <encrypt.h>
+
 #include <fcntl.h> // open
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +13,7 @@
 #define FIORINO_PBKDF2_ITERATIONS 600'000
 
 #define FIORINO_KEY_SIZE 256
+#define FIORINO_IV_SIZE 128
 
 /** \brief Decrypts a file from a vault
  * \param vault The information of the vault to decrypt from
@@ -58,16 +61,19 @@ int decrypt_file(struct Vault* vault, char* file) {
     const unsigned char* salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     int rc = RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE);
-    if (rc == 0) {
-        return 2;
-    }
+    if (rc == 0) return 2;
     // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-    /// \todo check if RFC 2898 is legacy and if we can get PBKDF2-SHA256-HMAC
     rc = PKCS5_PBKDF2_HMAC( 
         vault->passphrase, -1,
         salt, FIORINO_PBKDF2_SALT_SIZE,
         FIORINO_PBKDF2_ITERATIONS, EVP_sha256,
         FIORINO_KEY_SIZE, key
     );
-    
+    if (rc == 0) return 2;
+    const unsigned char* iv = malloc(FIORINO_IV_SIZE);
+    // https://docs.openssl.org/3.5/man3/RAND_bytes/
+    rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE);
+    if (rc == 0) return 2;
+    rc = encrypt(contents, fsize + 1, key, iv, ciphertext);
+    if (rc < 0) return 2;
 }
