@@ -10,10 +10,10 @@ lib/%.a: %.a
 	ar rcs $@ $<
 
 directories:
-	mkdir bin
-	mkdir build
-	mkdir include
-	mkdir lib
+	mkdir -p bin
+	mkdir -p build
+	mkdir -p include
+	mkdir -p lib
 
 all: directories lib/fiorino.so
 
