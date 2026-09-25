@@ -90,6 +90,7 @@ int runtime_setup() {
 }
 
 int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
+    if (runtime_setup()) return 1;
     long long fsize = file_size(file->file);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
