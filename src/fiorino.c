@@ -10,7 +10,7 @@
 
 // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
 #define FIORINO_PBKDF2_SALT_SIZE 256
-#define FIORINO_PBKDF2_ITERATIONS 600'000
+#define FIORINO_PBKDF2_ITERATIONS 600000
 
 #define FIORINO_KEY_SIZE 256
 #define FIORINO_IV_SIZE 128

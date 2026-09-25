@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 /* Maximum file size in bytes that the library will decrypt */
-#define FIORINO_MAX_FILE_SIZE 10'000'000
+#define FIORINO_MAX_FILE_SIZE 10000000
 
 /** \brief Information needed to access a vault */
 struct Vault {
