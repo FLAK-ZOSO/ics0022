@@ -51,26 +51,26 @@ int decrypt_file(struct Vault* vault, char* file) {
     FILE* f = fopen(file, "rb");
     long long fsize = file_size(f);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
-    const unsigned char* contents = malloc(fsize + 1);
-    fread(contents, fsize, fsize, f);
+    unsigned char *const contents = malloc(fsize + 1);
+    fread(contents, 1, fsize, f);
     /// \todo this would be a blunder, as padding is a thing
-    const unsigned char* ciphertext = malloc(fsize + 1);
-    const unsigned char* key = malloc(256);
+    unsigned char *const ciphertext = malloc(fsize + 1);
+    unsigned char *const key = malloc(256);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
     // We really cannot do without a salt
-    const unsigned char* salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
+    unsigned char *const salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     int rc = RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE);
     if (rc == 0) return 2;
     // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-    rc = PKCS5_PBKDF2_HMAC( 
+    rc = PKCS5_PBKDF2_HMAC(
         vault->passphrase, -1,
         salt, FIORINO_PBKDF2_SALT_SIZE,
         FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
         FIORINO_KEY_SIZE, key
     );
     if (rc == 0) return 2;
-    const unsigned char* iv = malloc(FIORINO_IV_SIZE);
+    unsigned char *const iv = malloc(FIORINO_IV_SIZE);
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE);
     if (rc == 0) return 2;
