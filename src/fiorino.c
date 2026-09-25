@@ -2,9 +2,11 @@
 #include <encrypt.h>
 
 #include <fcntl.h> // open
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wordexp.h>
+#include <dirent.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -34,6 +36,12 @@ int encrypt_file(struct Vault*, struct FileToEncrypt*);
  * \warning It leaves the cursor at the beginning of the file
  */
 long long file_size(FILE*);
+/** \brief Verifies that the system and runtime conditions are met
+ * \return State
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int runtime_checks();
 
 int fiorino_decrypt(struct Vault* vault, char** files) {
     
@@ -48,6 +56,37 @@ long long file_size(FILE* file) {
     long long fsize = ftell(file);
     fseek(file, 0, SEEK_SET);
     return fsize;
+}
+
+/**
+ * \return Status code
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int vault_root_directory_exists() {
+    // https://stackoverflow.com/a/15991337/15888601
+    wordexp_t vault_root_path;
+    wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, 0);
+    // https://stackoverflow.com/a/12510903/15888601
+    DIR* dir = opendir(vault_root_path.we_wordv[0]);
+    wordfree(&vault_root_path);
+    // https://stackoverflow.com/a/12510903/15888601
+    if (dir) {
+        closedir(dir);
+        return true;
+    } else if (ENOENT == errno) {
+        /// \todo log
+        return false;
+    } else {
+        /// \todo log
+        return false;
+    }
+}
+
+int runtime_checks() {
+    if (!vault_root_directory_exists()) {
+        
+    }
 }
 
 int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
