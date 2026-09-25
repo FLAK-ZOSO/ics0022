@@ -7,6 +7,7 @@
 #include <string.h>
 #include <wordexp.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -37,11 +38,12 @@ int encrypt_file(struct Vault*, struct FileToEncrypt*);
  */
 long long file_size(FILE*);
 /** \brief Verifies that the system and runtime conditions are met
+ * \note Must be strictly idemponent (e.g. don't delete .fiorino/* by mistake)
  * \return State
  * \retval 0 success
  * \retval 1 failure
  */
-int runtime_checks();
+int runtime_setup();
 
 int fiorino_decrypt(struct Vault* vault, char** files) {
     
@@ -67,26 +69,24 @@ int vault_root_directory_exists() {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
     wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, 0);
-    // https://stackoverflow.com/a/12510903/15888601
-    DIR* dir = opendir(vault_root_path.we_wordv[0]);
-    wordfree(&vault_root_path);
-    // https://stackoverflow.com/a/12510903/15888601
-    if (dir) {
-        closedir(dir);
-        return true;
-    } else if (ENOENT == errno) {
+    // https://stackoverflow.com/a/7430262/15888601
+    struct stat st = {0};
+    if (stat(vault_root_path.we_wordv[0], &st) == -1) {
         /// \todo log
-        return false;
-    } else {
+        if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_PERM) == -1) {
+            /// \todo log
+
+        }
+    } else if (FIORINO_VAULT_PERM != st.st_mode) {
         /// \todo log
-        return false;
+        chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_PERM);
     }
+    wordfree(&vault_root_path);
+    return 0;
 }
 
-int runtime_checks() {
-    if (!vault_root_directory_exists()) {
-        
-    }
+int runtime_setup() {
+    return vault_root_directory_exists();
 }
 
 int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
