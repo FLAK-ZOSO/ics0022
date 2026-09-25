@@ -4,6 +4,7 @@
 #include <fcntl.h> // open
 #include <stdlib.h>
 #include <string.h>
+#include <wordexp.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -28,7 +29,7 @@
  * \retval 1 other failure
  * \retval 2 OpenSSL failure
  */
-int encrypt_file(struct Vault*, FILE*);
+int encrypt_file(struct Vault*, struct FileToEncrypt*);
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
  */
@@ -49,11 +50,11 @@ long long file_size(FILE* file) {
     return fsize;
 }
 
-int encrypt_file(struct Vault* vault, FILE* file) {
-    long long fsize = file_size(file);
+int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
+    long long fsize = file_size(file->file);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
-    fread(contents, 1, fsize, file);
+    fread(contents, 1, fsize, file->file);
     unsigned char *const ciphertext = malloc(fsize + 16); // Padding
     unsigned char *const key = malloc(FIORINO_KEY_SIZE / 8);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
@@ -76,4 +77,24 @@ int encrypt_file(struct Vault* vault, FILE* file) {
     if (rc == 0) return 2;
     rc = encrypt(contents, fsize, key, iv, ciphertext);
     if (rc < 0) return 2;
+
+    /// \todo check the goddamn filename and vault name
+    // https://stackoverflow.com/a/15991337/15888601
+    wordexp_t root_path;
+    wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
+    // https://stackoverflow.com/a/2153774/15888601
+    char* fullpath = malloc(
+        strlen(root_path.we_wordv[0]) + 1
+        + strlen(vault->vault) + 1
+        + strlen(file->name) + 4
+    );
+    sprintf(fullpath, "%s/%s/%s.enc",
+            root_path.we_wordv[0], vault->vault, file->name);
+    wordfree(&root_path);
+    /// \note Consider whether it could be a fucked up idea to mix fopen and open
+    // https://stackoverflow.com/a/596337/15888601
+    int file_enc = open(fullpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
+    free(fullpath);
+    /// \todo finish this goddamn function
+
 }
