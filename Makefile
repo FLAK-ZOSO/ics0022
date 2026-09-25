@@ -1,5 +1,8 @@
 CCFLAGS=-std=c17 -I./src
 
+# https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
+all: directories lib/fiorino.so
+
 build/%.o: src/%.c src/%.h
 	cc $(CCFLAGS) -fPIC -c -o $@ $<
 
@@ -11,9 +14,7 @@ lib/%.a: %.a
 
 # https://stackoverflow.com/a/45048948/15888601
 directories:
-	$(shell mkdir -p bin build include lib)
-
-all: directories lib/fiorino.so
+	mkdir -p bin build include lib
 
 # We will take care of "install" way later
 # We should implement standard targets too
