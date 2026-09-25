@@ -86,7 +86,7 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     char* fullpath = malloc(
         strlen(root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1
-        + strlen(file->name) + 4
+        + strlen(file->name) + 4 + 1
     );
     sprintf(fullpath, "%s/%s/%s.enc",
             root_path.we_wordv[0], vault->vault, file->name);
