@@ -45,10 +45,6 @@ long long file_size(FILE*);
  */
 int runtime_setup();
 
-int fiorino_decrypt(struct Vault* vault, char** files) {
-    
-}
-
 long long file_size(FILE* file) {
     /* We cannot really lose the race condition here
      * as this program is the only one touching the
@@ -130,11 +126,29 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     );
     sprintf(fullpath, "%s/%s/%s.enc",
             root_path.we_wordv[0], vault->vault, file->name);
+    char* saltpath = malloc(
+        strlen(root_path.we_wordv[0]) + 1
+        + strlen(vault->vault) + 1
+        + strlen(file->name) + 5 + 1
+    );
+    sprintf(saltpath, "%s/%s/%s.salt",
+            root_path.we_wordv[0], vault->vault, file->name);
+    char* ivpath = malloc(
+        strlen(root_path.we_wordv[0]) + 1
+        + strlen(vault->vault) + 1
+        + strlen(file->name) + 3 + 1
+    );
+    sprintf(ivpath, "%s/%s/%s.iv",
+            root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
-    /// \note Consider whether it could be a fucked up idea to mix fopen and open
+    /// \todo make sure that these goddamn files don't exist yet; + log
     // https://stackoverflow.com/a/596337/15888601
     int file_enc = open(fullpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
+    int file_salt = open(saltpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
+    int file_iv = open(ivpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
     free(fullpath);
+    free(saltpath);
+    free(ivpath);
     /// \todo finish this goddamn function
 
 }
