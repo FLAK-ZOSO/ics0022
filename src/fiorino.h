@@ -3,10 +3,11 @@
 /* Maximum file size in bytes that the library will decrypt */
 #define FIORINO_MAX_FILE_SIZE 10'000'000
 
+/** \brief Information needed to access a vault */
 struct Vault {
-    char* user;
-    char* vault;
-    char* passphrase;
+    char* user; ///< claimed username
+    char* vault; ///< selected vault
+    char* passphrase; ///< attempted passphrase
 };
 
 /** \brief Decrypts a list of files from a vault
