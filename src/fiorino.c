@@ -22,6 +22,7 @@
  * \note The caller is responsible for closing the file
  * \note On an OpenSSL failure, call ERR_get_error
  * \see https://docs.openssl.org/3.5/man3/ERR_get_error/
+ * \todo Check all possible failures (fopen, file_size, fread, even malloc?)
  * \return Return code
  * \retval 0 success
  * \retval 1 other failure
