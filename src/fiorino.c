@@ -74,13 +74,13 @@ int vault_root_directory_exists() {
     struct stat st = {0};
     if (stat(vault_root_path.we_wordv[0], &st) == -1) {
         /// \todo log
-        if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_PERM) == -1) {
+        if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
             /// \todo log
 
         }
-    } else if (FIORINO_VAULT_PERM != st.st_mode) {
+    } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
         /// \todo log
-        chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_PERM);
+        chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM);
     }
     wordfree(&vault_root_path);
     return 0;

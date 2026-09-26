@@ -3,6 +3,7 @@
 /* Maximum file size in bytes that the library will decrypt */
 #define FIORINO_MAX_FILE_SIZE 10000000
 #define FIORINO_VAULT_ROOT_DIR "~/.fiorino"
+#define FIORINO_VAULT_DIR_PERM 0700
 #define FIORINO_VAULT_PERM 0600
 
 /** \brief Information needed to access a vault */
