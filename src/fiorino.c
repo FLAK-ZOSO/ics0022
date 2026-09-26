@@ -113,8 +113,8 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE / 8);
     if (rc == 0) return 2;
-    rc = encrypt(contents, fsize, key, iv, ciphertext);
-    if (rc < 0) return 2;
+    int encryptrc = encrypt(contents, fsize, key, iv, ciphertext);
+    if (encryptrc < 0) return 2;
 
     /// \todo check the goddamn filename and vault name
     // https://stackoverflow.com/a/15991337/15888601
@@ -142,6 +142,13 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     );
     sprintf(ivpath, "%s/%s/%s.iv",
             root_path.we_wordv[0], vault->vault, file->name);
+    char* keypath = malloc(
+        strlen(root_path.we_wordv[0]) + 1
+        + strlen(vault->vault) + 1
+        + strlen(file->name) + 4 + 1
+    );
+    sprintf(keypath, "%s/%s/%s.key",
+            root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
     // https://stackoverflow.com/a/596337/15888601
     FILE* file_enc = fopen(fullpath, "wb");
@@ -168,23 +175,60 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (chmod(ivpath, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
+    FILE* file_key = fopen(keypath, "wb");
+    if (file_key == NULL) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (chmod(file_key, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+    }
     free(fullpath);
     free(saltpath);
     free(ivpath);
+    free(keypath);
 
-    // Locking the files
-    // https://stackoverflow.com/a/7573369/15888601
+    // Locking the files: https://stackoverflow.com/a/7573369/15888601
+    // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
     int lockrc = flock(fileno(file_enc), LOCK_SH);
-    lockrc = flock(fileno(file_iv), LOCK_SH);
-    lockrc = flock(fileno(file_salt), LOCK_SH);
-
-    /// \todo finish this goddamn function
-
-    // Unlocking the files
-    // https://stackoverflow.com/a/33939497/15888601
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
+    if (!fwrite(ciphertext, 1, encryptrc, file_enc)) {
+        /// \todo log with errno
+    }
     lockrc = flock(fileno(file_enc), LOCK_UN);
+    fclose(file_enc);
+
+    lockrc = flock(fileno(file_iv), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
+    if (!fwrite(iv, 1, FIORINO_IV_SIZE, file_iv)) {
+        /// \todo log with errno
+    }
     lockrc = flock(fileno(file_iv), LOCK_UN);
+    fclose(file_iv);
+
+    lockrc = flock(fileno(file_salt), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
+    if (!fwrite(salt, 1, FIORINO_PBKDF2_SALT_SIZE, file_salt)) {
+        /// \todo log with errno
+    }
     lockrc = flock(fileno(file_salt), LOCK_UN);
+    fclose(file_salt);
+
+    lockrc = flock(fileno(file_key), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
+    if (!fwrite(key, 1, FIORINO_KEY_SIZE, file_key)) {
+        /// \todo log with errno
+    }
+    lockrc = flock(fileno(file_key), LOCK_UN);
+    fclose(file_key);
 
     /// \todo finish this goddamn function
 }
