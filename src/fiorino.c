@@ -61,7 +61,8 @@ long long file_size(FILE* file) {
 int vault_root_directory_exists() {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
-    wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, 0);
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0)
+        return 1;
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
     if (stat(vault_root_path.we_wordv[0], &st) == -1) {
@@ -91,7 +92,8 @@ int vault_root_directory_exists() {
 int vault_directory_exists(struct Vault* vault) {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
-    wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, 0);
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0)
+        return 1;
     int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1;
     char* vaultpath = malloc(vaultpath_alloc);
