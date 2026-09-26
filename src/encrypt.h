@@ -3,25 +3,20 @@
  * \see https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
  */
 #pragma once
+#include <bundle.h>
 
-/** \brief Encrypts the provided plaintext
- * \warning AES-256-CBC is what it is (padding oracle, unauthenticated ciphertext),
- *          thus we may want to use AES-256-GCM
- * \see https://csrc.nist.gov/pubs/sp/800/38/a/final
- * \see https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
- * \see https://wiki.openssl.org/index.php/EVP#Working_with_Algorithms_and_Modes
- * \todo on error exit there has to be cleanup, currently there isn't
+/** \brief Encrypts with AES-256-GCM.
+ * \note ciphertext must have plaintext_len + FIORINO_GCM_TAG_SIZE bytes.
+ * \return Ciphertext plus tag length, or -1 on failure.
  */
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
             unsigned char *iv, unsigned char *ciphertext);
 
-/** \brief Decrypts the provided plaintext
- * \warning AES-256-CBC is what it is (padding oracle, unauthenticated ciphertext),
- *          thus we may want to use AES-256-GCM
- * \see https://csrc.nist.gov/pubs/sp/800/38/a/final
- * \see https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
- * \see https://wiki.openssl.org/index.php/EVP#Working_with_Algorithms_and_Modes
- * \todo on error exit there has to be cleanup, currently there isn't
+/** \brief Authenticates and decrypts AES-256-GCM ciphertext.
+ * \note ciphertext_len includes the trailing FIORINO_GCM_TAG_SIZE bytes.
+ * \warning Discard all plaintext if this function returns -1; GCM may write
+ *          plaintext before tag verification finishes.
+ * \return Plaintext length, or -1 on failure (including invalid tag).
  */
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
             unsigned char *iv, unsigned char *plaintext);

@@ -177,7 +177,7 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
     fread(contents, 1, fsize, file->file);
-    unsigned char *const ciphertext = malloc(fsize + 16); // Padding
+    unsigned char *const ciphertext = malloc(fsize + FIORINO_GCM_TAG_SIZE);
     unsigned char *const key = malloc(FIORINO_KEY_SIZE);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
     // We really cannot do without a salt

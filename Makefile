@@ -15,6 +15,12 @@ lib/fiorino.so: build/fiorino.o build/encrypt.o | lib
 lib/fiorino.a: build/fiorino.o build/encrypt.o | lib
 	ar rcs $@ $^
 
+build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h | build
+	cc $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c -lcrypto
+
+test: build/test_encrypt_gcm
+	./build/test_encrypt_gcm
+
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:
 # 	mkdir -p bin build include lib
@@ -26,4 +32,4 @@ lib/fiorino.a: build/fiorino.o build/encrypt.o | lib
 clean:
 	rm -r build lib
 
-.PHONY: all clean directories
+.PHONY: all clean test

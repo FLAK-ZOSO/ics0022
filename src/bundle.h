@@ -10,12 +10,15 @@
 #define FIORINO_KEY_SIZE (FIORINO_KEY_SIZE_BITS / 8)
 #define FIORINO_IV_SIZE_BITS 128
 #define FIORINO_IV_SIZE (FIORINO_IV_SIZE_BITS / 8)
+#define FIORINO_GCM_TAG_SIZE_BITS 128
+#define FIORINO_GCM_TAG_SIZE (FIORINO_GCM_TAG_SIZE_BITS / 8)
 
 struct FiorinoBundle {
     unsigned char iv[FIORINO_IV_SIZE];
     unsigned char salt[FIORINO_PBKDF2_SALT_SIZE];
     unsigned char* ciphertext;
     size_t ciphertext_len;
+    unsigned char* tag[FIORINO_GCM_TAG_SIZE];
 };
 
 struct FiorinoBundle deserialize_bundle(unsigned char*);
