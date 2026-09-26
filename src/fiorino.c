@@ -142,11 +142,6 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     sprintf(ivpath, "%s/%s/%s.iv",
             root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
-    struct stat st = {0};
-    if (stat(fullpath, &st) == 0) { // Encrypted file already exists
-        /// \todo log
-        fprintf(stderr, "The file you are trying to encrypt will overwrite %s", fullpath);
-    }
     // https://stackoverflow.com/a/596337/15888601
     int file_enc = open(fullpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
     int file_salt = open(saltpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
