@@ -24,6 +24,7 @@
  * \param files File to encrypt, open in read binary mode
  * \note The caller is responsible for the allocation of the vault and members
  * \note The caller is responsible for closing the file
+ * \note It overwrites pre-existing files, as a file manager should
  * \note On an OpenSSL failure, call ERR_get_error
  * \see https://docs.openssl.org/3.5/man3/ERR_get_error/
  * \todo Check all possible failures (fopen, file_size, fread, even malloc?)
@@ -141,7 +142,11 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     sprintf(ivpath, "%s/%s/%s.iv",
             root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
-    /// \todo make sure that these goddamn files don't exist yet; + log
+    struct stat st = {0};
+    if (stat(fullpath, &st) == 0) { // Encrypted file already exists
+        /// \todo log
+        fprintf(stderr, "The file you are trying to encrypt will overwrite %s", fullpath);
+    }
     // https://stackoverflow.com/a/596337/15888601
     int file_enc = open(fullpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
     int file_salt = open(saltpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
