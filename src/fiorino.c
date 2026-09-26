@@ -74,6 +74,7 @@ int vault_root_directory_exists() {
         /// \todo log
         if (chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
             /// \todo log
+            wordfree(&vault_root_path);
             return 1;
         }
     }
@@ -94,6 +95,10 @@ int vault_directory_exists(struct Vault* vault) {
     int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1;
     char* vaultpath = malloc(vaultpath_alloc);
+    if (vaultpath == NULL) {
+        wordfree(&vault_root_path);
+        return 1;
+    }
     sprintf(vaultpath, "%s/%s",
             vault_root_path.we_wordv[0], vault->vault);
     wordfree(&vault_root_path);
@@ -110,9 +115,11 @@ int vault_directory_exists(struct Vault* vault) {
         /// \todo log
         if (chmod(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
             /// \todo log
+            free(vaultpath);
             return 1;
         }
     }
+    free(vaultpath);
     return 0;
 }
 
