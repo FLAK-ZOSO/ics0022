@@ -13,14 +13,21 @@
 #define FIORINO_GCM_TAG_SIZE_BITS 128
 #define FIORINO_GCM_TAG_SIZE (FIORINO_GCM_TAG_SIZE_BITS / 8)
 
+/** \brief The core contents of a serialized Fiorino bundle */
 struct FiorinoBundle {
     unsigned char iv[FIORINO_IV_SIZE];
     unsigned char salt[FIORINO_PBKDF2_SALT_SIZE];
-    unsigned char* ciphertext;
     size_t ciphertext_len;
+    unsigned char* ciphertext;
     unsigned char* tag[FIORINO_GCM_TAG_SIZE];
 };
 
-struct FiorinoBundle deserialize_bundle(unsigned char*);
+/** \brief Deserializes a bundled file into a FiorinoBundle structure
+ * \param contents Allocated memory for the bundle
+ * \param contents_len Size of the allocated memory
+ * \return FiorinoBundle containing the deserialized data
+ * \retval NULL when deserialization failed
+ */
+struct FiorinoBundle* deserialize_bundle(unsigned char* contents, size_t contents_len);
 
 unsigned char* serialize_bundle(struct FiorinoBundle*);
