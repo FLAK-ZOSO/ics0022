@@ -32,12 +32,18 @@ struct FileToEncrypt {
 int fiorino_decrypt(struct Vault* vault, char* file);
 
 /** \brief Encrypts a file to a vault
- * \param vault Identifier of the vault to encrypt to
- * \param file File to encrypt
- * \note The caller is responsible for the allocation of vault and filename
+ * \param vault The information of the vault to encrypt to
+ * \param file File to encrypt, open in read binary mode
+ * \note The caller is responsible for the allocation of the vault and members
+ * \note The caller is responsible for closing the file
+ * \note It overwrites pre-existing files, as a file manager should
+ * \note On an OpenSSL failure, call ERR_get_error
+ * \see https://docs.openssl.org/3.5/man3/ERR_get_error/
+ * \todo Check all possible failures (fopen, file_size, fread, even malloc?)
  * \return Return code
  * \retval 0 success
- * \retval 1 failure
+ * \retval 1 other failure
+ * \retval 2 OpenSSL failure
  */
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file);
 

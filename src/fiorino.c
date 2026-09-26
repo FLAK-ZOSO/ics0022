@@ -15,21 +15,6 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 
-/** \brief Encrypts a file from a vault
- * \param vault The information of the vault to encrypt to
- * \param files File to encrypt, open in read binary mode
- * \note The caller is responsible for the allocation of the vault and members
- * \note The caller is responsible for closing the file
- * \note It overwrites pre-existing files, as a file manager should
- * \note On an OpenSSL failure, call ERR_get_error
- * \see https://docs.openssl.org/3.5/man3/ERR_get_error/
- * \todo Check all possible failures (fopen, file_size, fread, even malloc?)
- * \return Return code
- * \retval 0 success
- * \retval 1 other failure
- * \retval 2 OpenSSL failure
- */
-int encrypt_file(struct Vault*, struct FileToEncrypt*);
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
  */
@@ -170,6 +155,36 @@ static FILE* open_output_file(const char* path) {
     return output;
 }
 
+static FILE* open_input_file(const char* path) {
+    int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) return NULL;
+
+    struct stat st;
+    const off_t min_size = FIORINO_IV_SIZE + FIORINO_PBKDF2_SALT_SIZE +
+                           FIORINO_GCM_TAG_SIZE;
+    if (fstat(fd, &st) != 0) {
+        int error = errno;
+        close(fd);
+        errno = error;
+        return NULL;
+    }
+    if (!S_ISREG(st.st_mode) || st.st_uid != geteuid() ||
+        st.st_size < min_size ||
+        st.st_size > min_size + FIORINO_MAX_FILE_SIZE) {
+        close(fd);
+        errno = EINVAL;
+        return NULL;
+    }
+
+    FILE* input = fdopen(fd, "rb");
+    if (input == NULL) {
+        int error = errno;
+        close(fd);
+        errno = error;
+    }
+    return input;
+}
+
 static void write_output_file(FILE* output, const unsigned char* data,
                               size_t length) {
     if (!fwrite(data, 1, length, output)) {
@@ -256,5 +271,16 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
 int fiorino_decrypt(struct Vault* vault, char* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
-    
+    /// \todo do the due checks on this input argument
+    // if (runtime_setup_file(file)) return 1;
+
+    wordexp_t root_path;
+    wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
+    /// \todo Be careful with that "file", who knows what buffer overflows are coming
+    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
+    FILE* file_enc = open_input_file(fullpath);
+    long long fsize = file_size(file_enc); // Very needed to check the file is not a crafted bomb payload
+    wordfree(&root_path);
+
+    /// \todo finish this function, just began
 }
