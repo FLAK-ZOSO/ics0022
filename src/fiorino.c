@@ -143,9 +143,30 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
             root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
     // https://stackoverflow.com/a/596337/15888601
-    int file_enc = open(fullpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
-    int file_salt = open(saltpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
-    int file_iv = open(ivpath, O_CREAT|O_WRONLY, FIORINO_VAULT_PERM);
+    FILE* file_enc = fopen(fullpath, "wb");
+    if (file_enc == NULL) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (chmod(fullpath, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+    }
+    FILE* file_salt = fopen(saltpath, "wb");
+    if (file_salt == NULL) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (chmod(saltpath, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+    }
+    FILE* file_iv = fopen(ivpath, "wb");
+    if (file_iv == NULL) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (chmod(ivpath, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+    }
     free(fullpath);
     free(saltpath);
     free(ivpath);
