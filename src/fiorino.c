@@ -242,9 +242,6 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     write_output_file(file_enc, serialized, serialized_len);
     free(serialized);
 
-    /// \warning this approach cannot stay,
-    /// as one could bork a file without being able to place the key,
-    /// the only way is to rotate to *.bak temporary files
     if (rename(fullpath_tmp, fullpath) == -1) {
         /// \todo log with errno
         return 1;
