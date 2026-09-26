@@ -252,3 +252,9 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
 
     return 0;
 }
+
+int fiorino_decrypt(struct Vault* vault, char* file) {
+    if (runtime_setup()) return 1;
+    if (runtime_setup_vault(vault)) return 1;
+    
+}

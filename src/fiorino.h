@@ -21,24 +21,24 @@ struct FileToEncrypt {
     char* name;
 };
 
-/** \brief Decrypts a list of files from a vault
+/** \brief Decrypts a file from a vault
  * \param vault Identifier of the vault to decrypt from
  * \param file File to decrypt, by basename
- * \note The caller is responsible for the allocation of vault and filenames
+ * \note The caller is responsible for the allocation of vault and filename
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
  */
-int fiorino_decrypt(struct Vault* vault, char* files);
+int fiorino_decrypt(struct Vault* vault, char* file);
 
-/** \brief Encrypts a list of files to a vault
+/** \brief Encrypts a file to a vault
  * \param vault Identifier of the vault to encrypt to
  * \param file File to encrypt
- * \note The caller is responsible for the allocation of vault and filenames
+ * \note The caller is responsible for the allocation of vault and filename
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
  */
-int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* files);
+int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file);
 
 /** \todo see functionality declared in the user interface */
