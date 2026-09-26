@@ -19,18 +19,23 @@ struct FiorinoBundle {
     unsigned char salt[FIORINO_PBKDF2_SALT_SIZE];
     size_t ciphertext_len;
     unsigned char* ciphertext;
-    unsigned char* tag[FIORINO_GCM_TAG_SIZE];
+    unsigned char tag[FIORINO_GCM_TAG_SIZE];
 };
 
 /** \brief Deserializes a bundled file into a FiorinoBundle structure
  * \warning The caller is responsible for deallocating the struct from the heap
  * \note The struct is allocated with a single `malloc` call and thus can be
  *       freed with a single `free` call
- * \param contents Allocated memory for the bundle
- * \param contents_len Size of the allocated memory
- * \return FiorinoBundle containing the deserialized data
+ * \param contents Serialized bytes in IV, salt, ciphertext, tag order
+ * \param contents_len Number of bytes available at contents
+ * \return Newly allocated bundle; its ciphertext is in the same allocation
  * \retval NULL when deserialization failed
  */
-struct FiorinoBundle* deserialize_bundle(unsigned char* contents, size_t contents_len);
+struct FiorinoBundle* deserialize_bundle(const unsigned char* contents, size_t contents_len);
 
-unsigned char* serialize_bundle(struct FiorinoBundle*);
+/** \brief Serializes a bundle in IV, salt, ciphertext, tag order
+ * \param bundle Bundle to serialize
+ * \param contents_len Receives the allocated buffer length; set to zero on failure
+ * \return Newly allocated bytes, freed by the caller with free(), or NULL
+ */
+unsigned char* serialize_bundle(const struct FiorinoBundle* bundle, size_t* contents_len);

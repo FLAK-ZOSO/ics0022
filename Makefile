@@ -9,17 +9,21 @@ build lib:
 build/%.o: src/%.c src/%.h | build
 	cc $(CCFLAGS) -fPIC -c -o $@ $<
 
-lib/fiorino.so: build/fiorino.o build/encrypt.o | lib
+lib/fiorino.so: build/fiorino.o build/encrypt.o build/bundle.o | lib
 	cc -shared -o $@ $^ -lcrypto
 
-lib/fiorino.a: build/fiorino.o build/encrypt.o | lib
+lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o | lib
 	ar rcs $@ $^
 
 build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h | build
 	cc $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c -lcrypto
 
-test: build/test_encrypt_gcm
+build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h | build
+	cc $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c
+
+test: build/test_encrypt_gcm build/test_bundle
 	./build/test_encrypt_gcm
+	./build/test_bundle
 
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:

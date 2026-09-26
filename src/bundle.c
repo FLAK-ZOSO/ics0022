@@ -24,11 +24,34 @@ struct FiorinoBundle *deserialize_bundle(const unsigned char *contents, size_t c
     bundle->ciphertext_len = ciphertext_len;
 
     memcpy(bundle->iv, contents, FIORINO_IV_SIZE);
-    memcpy(bundle->salt, contents + FIORINO_IV_SIZE,
-           FIORINO_PBKDF2_SALT_SIZE);
-    memcpy(bundle->ciphertext, contents + header_len, ciphertext_len);
-    memcpy(bundle->tag, contents + header_len + ciphertext_len,
-           FIORINO_GCM_TAG_SIZE);
+    memcpy(bundle->salt, contents + FIORINO_IV_SIZE, FIORINO_PBKDF2_SALT_SIZE);
+    if (ciphertext_len != 0)
+        memcpy(bundle->ciphertext, contents + header_len, ciphertext_len);
+    memcpy(bundle->tag, contents + header_len + ciphertext_len, FIORINO_GCM_TAG_SIZE);
 
     return bundle;
+}
+
+unsigned char* serialize_bundle(const struct FiorinoBundle* bundle,
+                                size_t* contents_len) {
+    if (contents_len == NULL) return NULL;
+    *contents_len = 0;
+    if (bundle == NULL || bundle->ciphertext_len > FIORINO_MAX_FILE_SIZE ||
+        (bundle->ciphertext_len != 0 && bundle->ciphertext == NULL))
+        return NULL;
+
+    const size_t header_len = FIORINO_IV_SIZE + FIORINO_PBKDF2_SALT_SIZE;
+    const size_t total_len = header_len + bundle->ciphertext_len +
+                             FIORINO_GCM_TAG_SIZE;
+    unsigned char* contents = malloc(total_len);
+    if (contents == NULL) return NULL;
+
+    memcpy(contents, bundle->iv, FIORINO_IV_SIZE);
+    memcpy(contents + FIORINO_IV_SIZE, bundle->salt, FIORINO_PBKDF2_SALT_SIZE);
+    if (bundle->ciphertext_len != 0)
+        memcpy(contents + header_len, bundle->ciphertext, bundle->ciphertext_len);
+    memcpy(contents + header_len + bundle->ciphertext_len, bundle->tag,
+           FIORINO_GCM_TAG_SIZE);
+    *contents_len = total_len;
+    return contents;
 }
