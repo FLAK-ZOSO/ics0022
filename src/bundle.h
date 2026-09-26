@@ -23,6 +23,9 @@ struct FiorinoBundle {
 };
 
 /** \brief Deserializes a bundled file into a FiorinoBundle structure
+ * \warning The caller is responsible for deallocating the struct from the heap
+ * \note The struct is allocated with a single `malloc` call and thus can be
+ *       freed with a single `free` call
  * \param contents Allocated memory for the bundle
  * \param contents_len Size of the allocated memory
  * \return FiorinoBundle containing the deserialized data
