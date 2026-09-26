@@ -144,6 +144,41 @@ int runtime_setup_vault(struct Vault* vault) {
     return vault_directory_exists(vault) || vault_user_corresponds(vault);
 }
 
+static char* output_path(const char* root, const char* vault,
+                         const char* name, const char* suffix) {
+    int length = snprintf(NULL, 0, "%s/%s/%s%s", root, vault, name, suffix);
+    if (length < 0) return NULL;
+
+    char* path = malloc((size_t)length + 1);
+    if (path != NULL)
+        snprintf(path, (size_t)length + 1, "%s/%s/%s%s",
+                 root, vault, name, suffix);
+    return path;
+}
+
+static FILE* open_output_file(const char* path) {
+    FILE* output = fopen(path, "wb");
+    if (output == NULL) return NULL;
+
+    int lockrc = flock(fileno(output), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
+    if (chmod(path, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+    }
+    return output;
+}
+
+static void write_output_file(FILE* output, const unsigned char* data,
+                              size_t length) {
+    if (!fwrite(data, 1, length, output)) {
+        /// \todo log with errno
+    }
+    flock(fileno(output), LOCK_UN);
+    fclose(output);
+}
+
 int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
@@ -178,94 +213,42 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t root_path;
     wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
-    // https://stackoverflow.com/a/2153774/15888601
-    int fullpath_alloc = strlen(root_path.we_wordv[0]) + 1
-        + strlen(vault->vault) + 1
-        + strlen(file->name) + 4 + 1;
-    char* fullpath = malloc(fullpath_alloc);
-    char* fullpath_tmp = malloc(fullpath_alloc + 4);
-    sprintf(fullpath, "%s/%s/%s.enc",
-            root_path.we_wordv[0], vault->vault, file->name);
-    sprintf(fullpath_tmp, "%s/%s/%s.enc.tmp",
-            root_path.we_wordv[0], vault->vault, file->name);
-    int saltpath_alloc = strlen(root_path.we_wordv[0]) + 1
-        + strlen(vault->vault) + 1
-        + strlen(file->name) + 5 + 1;
-    char* saltpath = malloc(saltpath_alloc);
-    char* saltpath_tmp = malloc(saltpath_alloc + 4);
-    sprintf(saltpath, "%s/%s/%s.salt",
-            root_path.we_wordv[0], vault->vault, file->name);
-    sprintf(saltpath_tmp, "%s/%s/%s.salt.tmp",
-            root_path.we_wordv[0], vault->vault, file->name);
-    int ivpath_alloc = strlen(root_path.we_wordv[0]) + 1
-        + strlen(vault->vault) + 1
-        + strlen(file->name) + 3 + 1;
-    char* ivpath = malloc(ivpath_alloc);
-    char* ivpath_tmp = malloc(ivpath_alloc + 4);
-    sprintf(ivpath, "%s/%s/%s.iv",
-            root_path.we_wordv[0], vault->vault, file->name);
-    sprintf(ivpath_tmp, "%s/%s/%s.iv.tmp",
-            root_path.we_wordv[0], vault->vault, file->name);
+    char* fullpath = output_path(root_path.we_wordv[0], vault->vault,
+                                 file->name, ".enc");
+    char* fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
+                                     file->name, ".enc.tmp");
+    char* saltpath = output_path(root_path.we_wordv[0], vault->vault,
+                                 file->name, ".salt");
+    char* saltpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
+                                     file->name, ".salt.tmp");
+    char* ivpath = output_path(root_path.we_wordv[0], vault->vault,
+                               file->name, ".iv");
+    char* ivpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
+                                   file->name, ".iv.tmp");
     wordfree(&root_path);
 
-    // https://stackoverflow.com/a/596337/15888601
-    FILE* file_enc = fopen(fullpath_tmp, "wb");
+    FILE* file_enc = open_output_file(fullpath_tmp);
     if (file_enc == NULL) {
         /// \todo log with errno
         return 1;
     }
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
-    int lockrc = flock(fileno(file_enc), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
-    if (chmod(fullpath_tmp, FIORINO_VAULT_PERM) == -1) {
-        /// \todo log
-    }
 
-    FILE* file_salt = fopen(saltpath_tmp, "wb");
+    FILE* file_salt = open_output_file(saltpath_tmp);
     if (file_salt == NULL) {
         /// \todo log with errno
         return 1;
     }
-    lockrc = flock(fileno(file_salt), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
-    if (chmod(saltpath_tmp, FIORINO_VAULT_PERM) == -1) {
-        /// \todo log
-    }
-    FILE* file_iv = fopen(ivpath_tmp, "wb");
+    FILE* file_iv = open_output_file(ivpath_tmp);
     if (file_iv == NULL) {
         /// \todo log with errno
         return 1;
     }
-    lockrc = flock(fileno(file_iv), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
-    if (chmod(ivpath_tmp, FIORINO_VAULT_PERM) == -1) {
-        /// \todo log
-    }
 
-    if (!fwrite(ciphertext, 1, encryptrc, file_enc)) {
-        /// \todo log with errno
-    }
-    lockrc = flock(fileno(file_enc), LOCK_UN);
-    fclose(file_enc);
-
-    if (!fwrite(iv, 1, FIORINO_IV_SIZE, file_iv)) {
-        /// \todo log with errno
-    }
-    lockrc = flock(fileno(file_iv), LOCK_UN);
-    fclose(file_iv);
-
-    if (!fwrite(salt, 1, FIORINO_PBKDF2_SALT_SIZE, file_salt)) {
-        /// \todo log with errno
-    }
-    lockrc = flock(fileno(file_salt), LOCK_UN);
-    fclose(file_salt);
+    write_output_file(file_enc, ciphertext, encryptrc);
+    write_output_file(file_iv, iv, FIORINO_IV_SIZE);
+    write_output_file(file_salt, salt, FIORINO_PBKDF2_SALT_SIZE);
 
     /// \warning this approach cannot stay,
     /// as one could bork a file without being able to place the key,
