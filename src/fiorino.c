@@ -193,9 +193,6 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (chmod(ivpath_tmp, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
-    free(fullpath_tmp);
-    free(saltpath_tmp);
-    free(ivpath_tmp);
 
     if (!fwrite(ciphertext, 1, encryptrc, file_enc)) {
         /// \todo log with errno
@@ -214,6 +211,29 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     }
     lockrc = flock(fileno(file_salt), LOCK_UN);
     fclose(file_salt);
+
+    /// \warning this approach cannot stay,
+    /// as one could bork a file without being able to place the key,
+    /// the only way is to rotate to *.bak temporary files
+    if (rename(fullpath_tmp, fullpath) == -1) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (rename(ivpath_tmp, ivpath) == -1) {
+        /// \todo log with errno
+        return 1;
+    }
+    if (rename(saltpath_tmp, saltpath) == -1) {
+        /// \todo log with errno
+        return 1;
+    }
+
+    free(fullpath_tmp);
+    free(saltpath_tmp);
+    free(ivpath_tmp);
+    free(fullpath);
+    free(saltpath);
+    free(ivpath);
 
     return 0;
 }
