@@ -21,9 +21,13 @@ build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bund
 build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h | build
 	cc $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c
 
-test: build/test_encrypt_gcm build/test_bundle
+build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/fiorino.so | build
+	cc $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+
+test: build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup
 	./build/test_encrypt_gcm
 	./build/test_bundle
+	./build/test_encrypt_file_cleanup
 
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:
