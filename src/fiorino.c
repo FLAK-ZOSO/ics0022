@@ -4,7 +4,7 @@
 #include <fcntl.h> // open
 #include <errno.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <sys/file.h>
 #include <string.h>
 #include <wordexp.h>
 #include <dirent.h>
