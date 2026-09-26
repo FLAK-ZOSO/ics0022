@@ -213,18 +213,12 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t root_path;
     wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
-    char* fullpath = output_path(root_path.we_wordv[0], vault->vault,
-                                 file->name, ".enc");
-    char* fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
-                                     file->name, ".enc.tmp");
-    char* saltpath = output_path(root_path.we_wordv[0], vault->vault,
-                                 file->name, ".salt");
-    char* saltpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
-                                     file->name, ".salt.tmp");
-    char* ivpath = output_path(root_path.we_wordv[0], vault->vault,
-                               file->name, ".iv");
-    char* ivpath_tmp = output_path(root_path.we_wordv[0], vault->vault,
-                                   file->name, ".iv.tmp");
+    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
+    char* fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
+    char* saltpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".salt");
+    char* saltpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".salt.tmp");
+    char* ivpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".iv");
+    char* ivpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".iv.tmp");
     wordfree(&root_path);
 
     FILE* file_enc = open_output_file(fullpath_tmp);
