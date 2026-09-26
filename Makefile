@@ -1,4 +1,4 @@
-CCFLAGS=-std=c17 -I./src -Wall -MMD -MP
+CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -I./src -Wall -MMD -MP
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/fiorino.so

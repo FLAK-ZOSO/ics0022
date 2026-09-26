@@ -4,6 +4,7 @@
 #include <fcntl.h> // open
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <wordexp.h>
 #include <dirent.h>
@@ -170,6 +171,20 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     free(fullpath);
     free(saltpath);
     free(ivpath);
+
+    // Locking the files
+    // https://stackoverflow.com/a/7573369/15888601
+    int lockrc = flock(fileno(file_enc), LOCK_SH);
+    lockrc = flock(fileno(file_iv), LOCK_SH);
+    lockrc = flock(fileno(file_salt), LOCK_SH);
+
     /// \todo finish this goddamn function
 
+    // Unlocking the files
+    // https://stackoverflow.com/a/33939497/15888601
+    lockrc = flock(fileno(file_enc), LOCK_UN);
+    lockrc = flock(fileno(file_iv), LOCK_UN);
+    lockrc = flock(fileno(file_salt), LOCK_UN);
+
+    /// \todo finish this goddamn function
 }
