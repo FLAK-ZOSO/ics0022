@@ -146,19 +146,31 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     sprintf(ivpath, "%s/%s/%s.iv",
             root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
+
     // https://stackoverflow.com/a/596337/15888601
     FILE* file_enc = fopen(fullpath, "wb");
     if (file_enc == NULL) {
         /// \todo log with errno
         return 1;
     }
+    // Locking the files: https://stackoverflow.com/a/7573369/15888601
+    // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
+    int lockrc = flock(fileno(file_enc), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
     if (chmod(fullpath, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
+
     FILE* file_salt = fopen(saltpath, "wb");
     if (file_salt == NULL) {
         /// \todo log with errno
         return 1;
+    }
+    lockrc = flock(fileno(file_salt), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
     }
     if (chmod(saltpath, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
@@ -168,6 +180,10 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
         /// \todo log with errno
         return 1;
     }
+    lockrc = flock(fileno(file_iv), LOCK_SH);
+    if (lockrc == -1) {
+        /// \todo log with errno
+    }
     if (chmod(ivpath, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
@@ -175,32 +191,18 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     free(saltpath);
     free(ivpath);
 
-    // Locking the files: https://stackoverflow.com/a/7573369/15888601
-    // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
-    int lockrc = flock(fileno(file_enc), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
     if (!fwrite(ciphertext, 1, encryptrc, file_enc)) {
         /// \todo log with errno
     }
     lockrc = flock(fileno(file_enc), LOCK_UN);
     fclose(file_enc);
 
-    lockrc = flock(fileno(file_iv), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
     if (!fwrite(iv, 1, FIORINO_IV_SIZE, file_iv)) {
         /// \todo log with errno
     }
     lockrc = flock(fileno(file_iv), LOCK_UN);
     fclose(file_iv);
 
-    lockrc = flock(fileno(file_salt), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
     if (!fwrite(salt, 1, FIORINO_PBKDF2_SALT_SIZE, file_salt)) {
         /// \todo log with errno
     }
