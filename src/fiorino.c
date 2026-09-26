@@ -179,14 +179,14 @@ static void write_output_file(FILE* output, const unsigned char* data,
     fclose(output);
 }
 
-int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
+int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     long long fsize = file_size(file->file);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
     fread(contents, 1, fsize, file->file);
-    unsigned char *const ciphertext = malloc(fsize + FIORINO_GCM_TAG_SIZE);
+    unsigned char *const ciphertext = malloc(fsize + 1);
     unsigned char *const key = malloc(FIORINO_KEY_SIZE);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
     // We really cannot do without a salt
@@ -206,7 +206,8 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE);
     if (rc == 0) return 2;
-    int encryptrc = encrypt(contents, fsize, key, iv, ciphertext);
+    unsigned char tag[FIORINO_GCM_TAG_SIZE];
+    int encryptrc = encrypt(contents, fsize, key, iv, ciphertext, tag);
     if (encryptrc < 0) return 2;
 
     /// \todo check the goddamn filename and vault name
@@ -215,34 +216,31 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
     char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
     char* fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
-    char* saltpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".salt");
-    char* saltpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".salt.tmp");
-    char* ivpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".iv");
-    char* ivpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".iv.tmp");
     wordfree(&root_path);
+
+    struct FiorinoBundle bundle = {
+        .ciphertext_len = (size_t)encryptrc,
+        .ciphertext = ciphertext,
+    };
+    memcpy(bundle.iv, iv, sizeof bundle.iv);
+    memcpy(bundle.salt, salt, sizeof bundle.salt);
+    memcpy(bundle.tag, tag, sizeof bundle.tag);
+    size_t serialized_len = 0;
+    unsigned char* serialized = serialize_bundle(&bundle, &serialized_len);
+    if (serialized == NULL) return 1;
+
 
     FILE* file_enc = open_output_file(fullpath_tmp);
     if (file_enc == NULL) {
         /// \todo log with errno
+        free(serialized);
         return 1;
     }
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
 
-    FILE* file_salt = open_output_file(saltpath_tmp);
-    if (file_salt == NULL) {
-        /// \todo log with errno
-        return 1;
-    }
-    FILE* file_iv = open_output_file(ivpath_tmp);
-    if (file_iv == NULL) {
-        /// \todo log with errno
-        return 1;
-    }
-
-    write_output_file(file_enc, ciphertext, encryptrc);
-    write_output_file(file_iv, iv, FIORINO_IV_SIZE);
-    write_output_file(file_salt, salt, FIORINO_PBKDF2_SALT_SIZE);
+    write_output_file(file_enc, serialized, serialized_len);
+    free(serialized);
 
     /// \warning this approach cannot stay,
     /// as one could bork a file without being able to place the key,
@@ -251,21 +249,9 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
         /// \todo log with errno
         return 1;
     }
-    if (rename(ivpath_tmp, ivpath) == -1) {
-        /// \todo log with errno
-        return 1;
-    }
-    if (rename(saltpath_tmp, saltpath) == -1) {
-        /// \todo log with errno
-        return 1;
-    }
 
     free(fullpath_tmp);
-    free(saltpath_tmp);
-    free(ivpath_tmp);
     free(fullpath);
-    free(saltpath);
-    free(ivpath);
 
     return 0;
 }

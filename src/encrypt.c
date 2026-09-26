@@ -1,17 +1,19 @@
 /** \file encrypt.c
  * \brief AES-256-GCM encryption and authenticated decryption.
- * \note The output format is ciphertext followed by a 16-byte GCM tag.
+ * \note Ciphertext and the GCM tag are returned separately.
  */
 #include <encrypt.h>
 
 #include <openssl/evp.h>
 #include <openssl/crypto.h>
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *ciphertext)
+int encrypt(const unsigned char *plaintext, int plaintext_len,
+            const unsigned char *key, const unsigned char *iv,
+            unsigned char *ciphertext,
+            unsigned char tag[FIORINO_GCM_TAG_SIZE])
 {
     if (plaintext == NULL || plaintext_len < 0 || key == NULL || iv == NULL ||
-        ciphertext == NULL) return -1;
+        ciphertext == NULL || tag == NULL) return -1;
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if (ctx == NULL) return -1;
@@ -28,35 +30,36 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
         goto done;
     ciphertext_len += len;
     if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, FIORINO_GCM_TAG_SIZE,
-                            ciphertext + ciphertext_len) != 1)
+                            tag) != 1)
         goto done;
-    result = ciphertext_len + FIORINO_GCM_TAG_SIZE;
+    result = ciphertext_len;
 
 done:
     EVP_CIPHER_CTX_free(ctx);
     return result;
 }
 
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *plaintext)
+int decrypt(const unsigned char *ciphertext, int ciphertext_len,
+            const unsigned char tag[FIORINO_GCM_TAG_SIZE],
+            const unsigned char *key, const unsigned char *iv,
+            unsigned char *plaintext)
 {
-    if (ciphertext == NULL || ciphertext_len < FIORINO_GCM_TAG_SIZE ||
+    if (ciphertext == NULL || ciphertext_len < 0 || tag == NULL ||
         key == NULL || iv == NULL || plaintext == NULL) return -1;
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if (ctx == NULL) return -1;
     int len = 0, plaintext_len = 0, result = -1;
-    const int encrypted_len = ciphertext_len - FIORINO_GCM_TAG_SIZE;
 
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL) != 1 ||
         EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, FIORINO_IV_SIZE,
                             NULL) != 1 ||
         EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv) != 1 ||
-        EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, encrypted_len) != 1)
+        EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len) != 1)
         goto done;
     plaintext_len = len;
     if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, FIORINO_GCM_TAG_SIZE,
-                            ciphertext + encrypted_len) != 1 ||
+                            (void *)tag) != 1 ||
         EVP_DecryptFinal_ex(ctx, plaintext + plaintext_len, &len) != 1)
         goto done;
     result = plaintext_len + len;

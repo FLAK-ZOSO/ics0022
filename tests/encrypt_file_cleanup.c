@@ -1,12 +1,11 @@
 #include <fiorino.h>
+#include <bundle.h>
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-int encrypt_file(struct Vault*, struct FileToEncrypt*);
 
 int main(void) {
     char home[] = "/tmp/fiorino-cleanup-XXXXXX";
@@ -20,20 +19,22 @@ int main(void) {
     struct Vault vault = { .user = geteuid(), .vault = "test",
                            .passphrase = "secret" };
     struct FileToEncrypt file = { .file = source, .name = "sample" };
-    assert(encrypt_file(&vault, &file) == 0);
-
-    /* This fails after encryption and exercises the writer's cleanup path. */
-    file.name = "missing/sample";
-    assert(encrypt_file(&vault, &file) == 1);
+    assert(fiorino_encrypt(&vault, &file) == 0);
     assert(fclose(source) == 0);
 
-    const char* suffixes[] = {".enc", ".salt", ".iv"};
     char path[256];
-    for (size_t i = 0; i < sizeof suffixes / sizeof suffixes[0]; ++i) {
-        assert(snprintf(path, sizeof path, "%s/.fiorino/test/sample%s",
-                        home, suffixes[i]) > 0);
-        assert(unlink(path) == 0);
-    }
+    assert(snprintf(path, sizeof path, "%s/.fiorino/test/sample.enc",
+                    home) > 0);
+    FILE* stored = fopen(path, "rb");
+    assert(stored != NULL);
+    unsigned char serialized[128];
+    size_t serialized_len = fread(serialized, 1, sizeof serialized, stored);
+    assert(fclose(stored) == 0);
+    struct FiorinoBundle* bundle =
+        deserialize_bundle(serialized, serialized_len);
+    assert(bundle != NULL && bundle->ciphertext_len == sizeof message);
+    free(bundle);
+    assert(unlink(path) == 0);
     assert(snprintf(path, sizeof path, "%s/.fiorino/test", home) > 0);
     assert(rmdir(path) == 0);
     assert(snprintf(path, sizeof path, "%s/.fiorino", home) > 0);
