@@ -145,13 +145,6 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     );
     sprintf(ivpath, "%s/%s/%s.iv",
             root_path.we_wordv[0], vault->vault, file->name);
-    char* keypath = malloc(
-        strlen(root_path.we_wordv[0]) + 1
-        + strlen(vault->vault) + 1
-        + strlen(file->name) + 4 + 1
-    );
-    sprintf(keypath, "%s/%s/%s.key",
-            root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
     // https://stackoverflow.com/a/596337/15888601
     FILE* file_enc = fopen(fullpath, "wb");
@@ -178,18 +171,9 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (chmod(ivpath, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
-    FILE* file_key = fopen(keypath, "wb");
-    if (file_key == NULL) {
-        /// \todo log with errno
-        return 1;
-    }
-    if (chmod(file_key, FIORINO_VAULT_PERM) == -1) {
-        /// \todo log
-    }
     free(fullpath);
     free(saltpath);
     free(ivpath);
-    free(keypath);
 
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
@@ -222,16 +206,6 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     }
     lockrc = flock(fileno(file_salt), LOCK_UN);
     fclose(file_salt);
-
-    lockrc = flock(fileno(file_key), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
-    if (!fwrite(key, 1, FIORINO_KEY_SIZE, file_key)) {
-        /// \todo log with errno
-    }
-    lockrc = flock(fileno(file_key), LOCK_UN);
-    fclose(file_key);
 
     return 0;
 }
