@@ -2,6 +2,7 @@
  * \brief Contains helper functions from the OpenSSL Wiki
  * \see https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
  */
+#pragma once
 
 /** \brief Encrypts the provided plaintext
  * \warning AES-256-CBC is what it is (padding oracle, unauthenticated ciphertext),

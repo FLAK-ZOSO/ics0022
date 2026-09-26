@@ -1,4 +1,5 @@
 #include <fiorino.h>
+#include <bundle.h>
 #include <encrypt.h>
 
 #include <fcntl.h> // open
@@ -13,16 +14,6 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
-
-// https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-#define FIORINO_PBKDF2_SALT_SIZE_BITS 256
-#define FIORINO_PBKDF2_SALT_SIZE (FIORINO_PBKDF2_SALT_SIZE_BITS / 8)
-#define FIORINO_PBKDF2_ITERATIONS 600000
-
-#define FIORINO_KEY_SIZE_BITS 256
-#define FIORINO_KEY_SIZE (FIORINO_KEY_SIZE_BITS / 8)
-#define FIORINO_IV_SIZE_BITS 128
-#define FIORINO_IV_SIZE (FIORINO_IV_SIZE_BITS / 8)
 
 /** \brief Encrypts a file from a vault
  * \param vault The information of the vault to encrypt to
