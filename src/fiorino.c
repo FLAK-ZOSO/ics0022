@@ -9,6 +9,7 @@
 #include <wordexp.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -61,7 +62,7 @@ long long file_size(FILE* file) {
     return fsize;
 }
 
-/**
+/** \brief Idempotently creates the vault root directory with correct permissions
  * \return Status code
  * \retval 0 success
  * \retval 1 failure
@@ -80,18 +81,72 @@ int vault_root_directory_exists() {
         }
     } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
         /// \todo log
-        chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM);
+        if (chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
+            /// \todo log
+            return 1;
+        }
     }
     wordfree(&vault_root_path);
     return 0;
+}
+
+/** \brief Idempotently creates a vault directory with correct permissions
+ * \param vault The vault to be checked
+ * \return Status code
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int vault_directory_exists(struct Vault* vault) {
+    // https://stackoverflow.com/a/15991337/15888601
+    wordexp_t vault_root_path;
+    wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, 0);
+    int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
+        + strlen(vault->vault) + 1;
+    char* vaultpath = malloc(vaultpath_alloc);
+    sprintf(vaultpath, "%s/%s",
+            vault_root_path.we_wordv[0], vault->vault);
+    wordfree(&vault_root_path);
+    
+    // https://stackoverflow.com/a/7430262/15888601
+    struct stat st = {0};
+    if (stat(vaultpath, &st) == -1) {
+        /// \todo log
+        if (mkdir(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
+            /// \todo log
+
+        }
+    } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
+        /// \todo log
+        if (chmod(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
+            /// \todo log
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/** \brief Idempotently creates a vault directory with correct permissions
+ * \param vault The vault whose user is to be checked
+ * \return Status code
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int vault_user_corresponds(struct Vault* vault) {
+    /// \todo log
+    return vault->user != geteuid();
 }
 
 int runtime_setup() {
     return vault_root_directory_exists();
 }
 
+int runtime_setup_vault(struct Vault* vault) {
+    return vault_directory_exists(vault) || vault_user_corresponds(vault);
+}
+
 int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
+    if (runtime_setup_vault(vault)) return 1;
     long long fsize = file_size(file->file);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
