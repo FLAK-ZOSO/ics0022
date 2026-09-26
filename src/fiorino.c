@@ -14,11 +14,14 @@
 #include <openssl/err.h>
 
 // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-#define FIORINO_PBKDF2_SALT_SIZE 256
+#define FIORINO_PBKDF2_SALT_SIZE_BITS 256
+#define FIORINO_PBKDF2_SALT_SIZE (FIORINO_PBKDF2_SALT_SIZE_BITS / 8)
 #define FIORINO_PBKDF2_ITERATIONS 600000
 
-#define FIORINO_KEY_SIZE 256
-#define FIORINO_IV_SIZE 128
+#define FIORINO_KEY_SIZE_BITS 256
+#define FIORINO_KEY_SIZE (FIORINO_KEY_SIZE_BITS / 8)
+#define FIORINO_IV_SIZE_BITS 128
+#define FIORINO_IV_SIZE (FIORINO_IV_SIZE_BITS / 8)
 
 /** \brief Encrypts a file from a vault
  * \param vault The information of the vault to encrypt to
@@ -94,24 +97,24 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     unsigned char *const contents = malloc(fsize + 1);
     fread(contents, 1, fsize, file->file);
     unsigned char *const ciphertext = malloc(fsize + 16); // Padding
-    unsigned char *const key = malloc(FIORINO_KEY_SIZE / 8);
+    unsigned char *const key = malloc(FIORINO_KEY_SIZE);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
     // We really cannot do without a salt
-    unsigned char *const salt = malloc(FIORINO_PBKDF2_SALT_SIZE / 8);
+    unsigned char *const salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
-    int rc = RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE / 8);
+    int rc = RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE);
     if (rc == 0) return 2;
     // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
     rc = PKCS5_PBKDF2_HMAC(
         vault->passphrase, -1,
-        salt, FIORINO_PBKDF2_SALT_SIZE / 8,
+        salt, FIORINO_PBKDF2_SALT_SIZE,
         FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
-        FIORINO_KEY_SIZE / 8, key
+        FIORINO_KEY_SIZE, key
     );
     if (rc == 0) return 2;
-    unsigned char *const iv = malloc(FIORINO_IV_SIZE / 8);
+    unsigned char *const iv = malloc(FIORINO_IV_SIZE);
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
-    rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE / 8);
+    rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE);
     if (rc == 0) return 2;
     int encryptrc = encrypt(contents, fsize, key, iv, ciphertext);
     if (encryptrc < 0) return 2;
@@ -230,5 +233,5 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     lockrc = flock(fileno(file_key), LOCK_UN);
     fclose(file_key);
 
-    /// \todo finish this goddamn function
+    return 0;
 }
