@@ -154,7 +154,7 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     wordfree(&root_path);
 
     // https://stackoverflow.com/a/596337/15888601
-    FILE* file_enc = fopen(fullpath, "wb");
+    FILE* file_enc = fopen(fullpath_tmp, "wb");
     if (file_enc == NULL) {
         /// \todo log with errno
         return 1;
@@ -165,11 +165,11 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (lockrc == -1) {
         /// \todo log with errno
     }
-    if (chmod(fullpath, FIORINO_VAULT_PERM) == -1) {
+    if (chmod(fullpath_tmp, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
 
-    FILE* file_salt = fopen(saltpath, "wb");
+    FILE* file_salt = fopen(saltpath_tmp, "wb");
     if (file_salt == NULL) {
         /// \todo log with errno
         return 1;
@@ -178,10 +178,10 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (lockrc == -1) {
         /// \todo log with errno
     }
-    if (chmod(saltpath, FIORINO_VAULT_PERM) == -1) {
+    if (chmod(saltpath_tmp, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
-    FILE* file_iv = fopen(ivpath, "wb");
+    FILE* file_iv = fopen(ivpath_tmp, "wb");
     if (file_iv == NULL) {
         /// \todo log with errno
         return 1;
@@ -190,12 +190,12 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     if (lockrc == -1) {
         /// \todo log with errno
     }
-    if (chmod(ivpath, FIORINO_VAULT_PERM) == -1) {
+    if (chmod(ivpath_tmp, FIORINO_VAULT_PERM) == -1) {
         /// \todo log
     }
-    free(fullpath);
-    free(saltpath);
-    free(ivpath);
+    free(fullpath_tmp);
+    free(saltpath_tmp);
+    free(ivpath_tmp);
 
     if (!fwrite(ciphertext, 1, encryptrc, file_enc)) {
         /// \todo log with errno
