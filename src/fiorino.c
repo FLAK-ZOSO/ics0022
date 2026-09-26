@@ -124,26 +124,32 @@ int encrypt_file(struct Vault* vault, struct FileToEncrypt* file) {
     wordexp_t root_path;
     wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
     // https://stackoverflow.com/a/2153774/15888601
-    char* fullpath = malloc(
-        strlen(root_path.we_wordv[0]) + 1
+    int fullpath_alloc = strlen(root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1
-        + strlen(file->name) + 4 + 1
-    );
+        + strlen(file->name) + 4 + 1;
+    char* fullpath = malloc(fullpath_alloc);
+    char* fullpath_tmp = malloc(fullpath_alloc + 4);
     sprintf(fullpath, "%s/%s/%s.enc",
             root_path.we_wordv[0], vault->vault, file->name);
-    char* saltpath = malloc(
-        strlen(root_path.we_wordv[0]) + 1
+    sprintf(fullpath_tmp, "%s/%s/%s.enc.tmp",
+            root_path.we_wordv[0], vault->vault, file->name);
+    int saltpath_alloc = strlen(root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1
-        + strlen(file->name) + 5 + 1
-    );
+        + strlen(file->name) + 5 + 1;
+    char* saltpath = malloc(saltpath_alloc);
+    char* saltpath_tmp = malloc(saltpath_alloc + 4);
     sprintf(saltpath, "%s/%s/%s.salt",
             root_path.we_wordv[0], vault->vault, file->name);
-    char* ivpath = malloc(
-        strlen(root_path.we_wordv[0]) + 1
+    sprintf(saltpath_tmp, "%s/%s/%s.salt.tmp",
+            root_path.we_wordv[0], vault->vault, file->name);
+    int ivpath_alloc = strlen(root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1
-        + strlen(file->name) + 3 + 1
-    );
+        + strlen(file->name) + 3 + 1;
+    char* ivpath = malloc(ivpath_alloc);
+    char* ivpath_tmp = malloc(ivpath_alloc + 4);
     sprintf(ivpath, "%s/%s/%s.iv",
+            root_path.we_wordv[0], vault->vault, file->name);
+    sprintf(ivpath_tmp, "%s/%s/%s.iv.tmp",
             root_path.we_wordv[0], vault->vault, file->name);
     wordfree(&root_path);
 
