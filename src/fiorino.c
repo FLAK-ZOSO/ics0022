@@ -324,7 +324,7 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         /// \todo cleanup
         return 1;
     }
-    write_output_file(file, plaintext, bundle->ciphertext_len);
+    write_output_file(exported, plaintext, bundle->ciphertext_len);
 
     /// \todo free some memory
 }
