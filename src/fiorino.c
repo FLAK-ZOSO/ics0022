@@ -5,6 +5,7 @@
 #include <fcntl.h> // open
 #include <errno.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <sys/file.h>
 #include <string.h>
 #include <wordexp.h>
@@ -309,6 +310,14 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     if (decryptrc == -1) {
         /// \todo log
         /// \todo cleanup
+        return 1;
+    }
+
+    /// \todo write the plaintext to a file in the same directory
+    // https://stackoverflow.com/a/298518/15888601
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        /// \todo log
         return 1;
     }
 

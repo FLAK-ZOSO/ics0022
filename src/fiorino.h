@@ -25,6 +25,7 @@ struct FileToEncrypt {
  * \param vault Identifier of the vault to decrypt from
  * \param file File to decrypt, by basename
  * \note The caller is responsible for the allocation of vault and filename
+ * \note It will, as expected by a file manager, overwrite the current omonymous file in cwd
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
