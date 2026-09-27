@@ -15,6 +15,11 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 
+#define FIORINO_MAX_ENCRYPTED_SIZE (FIORINO_MAX_FILE_SIZE \
+                                    + FIORINO_IV_SIZE \
+                                    + FIORINO_GCM_TAG_SIZE \
+                                    + FIORINO_PBKDF2_SALT_SIZE )
+
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
  */
@@ -278,9 +283,23 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
     /// \todo Be careful with that "file", who knows what buffer overflows are coming
     char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
+    wordfree(&root_path);
+
     FILE* file_enc = open_input_file(fullpath);
     long long fsize = file_size(file_enc); // Very needed to check the file is not a crafted bomb payload
-    wordfree(&root_path);
+    if (fsize > FIORINO_MAX_ENCRYPTED_SIZE) return 1;
+    unsigned char* const bundled = malloc(fsize);
+    fread(bundled, 1, fsize, file_enc);
+    struct FiorinoBundle* const bundle = deserialize_bundle(bundled, fsize);
+
+    unsigned char *const key = malloc(FIORINO_KEY_SIZE);
+    int rc = PKCS5_PBKDF2_HMAC(
+        vault->passphrase, -1,
+        bundle->salt, FIORINO_PBKDF2_SALT_SIZE,
+        FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
+        FIORINO_KEY_SIZE, key
+    );
+    if (rc == 0) return 2;
 
     /// \todo finish this function, just began
 }
