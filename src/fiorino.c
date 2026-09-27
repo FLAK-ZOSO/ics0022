@@ -301,5 +301,16 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     );
     if (rc == 0) return 2;
 
+    unsigned char* const plaintext = malloc(bundle->ciphertext_len);
+    int decryptrc = decrypt(
+        bundle->ciphertext, bundle->ciphertext_len, bundle->tag,
+        key, bundle->iv, plaintext
+    );
+    if (decryptrc == -1) {
+        /// \todo log
+        /// \todo cleanup
+        return 1;
+    }
+
     /// \todo finish this function, just began
 }
