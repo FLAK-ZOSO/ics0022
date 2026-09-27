@@ -287,6 +287,11 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     wordfree(&root_path);
 
     FILE* file_enc = open_input_file(fullpath);
+    if (file_enc == NULL) {
+        /// \todo log
+        /// \todo cleanup
+        return 1;
+    }
     long long fsize = file_size(file_enc); // Very needed to check the file is not a crafted bomb payload
     if (fsize > FIORINO_MAX_ENCRYPTED_SIZE) return 1;
     unsigned char* const bundled = malloc(fsize);
@@ -313,13 +318,13 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         return 1;
     }
 
-    /// \todo write the plaintext to a file in the same directory
-    // https://stackoverflow.com/a/298518/15888601
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    FILE* exported = open_output_file(file);
+    if (exported == NULL) {
         /// \todo log
+        /// \todo cleanup
         return 1;
     }
+    write_output_file(file, plaintext, bundle->ciphertext_len);
 
-    /// \todo finish this function, just began
+    /// \todo free some memory
 }
