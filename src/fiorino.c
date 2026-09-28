@@ -205,17 +205,27 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup_vault(vault)) return 1;
 
     long long fsize = file_size(file->file);
-    if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
-    unsigned char *const contents = malloc(fsize + 1);
-    fread(contents, 1, fsize, file->file);
-    unsigned char *const ciphertext = malloc(fsize + 1);
-    unsigned char *const key = malloc(FIORINO_KEY_SIZE);
+    if (fsize < 0 || fsize > FIORINO_MAX_FILE_SIZE) return 1;
+    size_t contents_len = (size_t)fsize + 1;
+    unsigned char* contents = malloc(contents_len);
+    unsigned char* ciphertext = malloc(contents_len);
+    unsigned char* key = malloc(FIORINO_KEY_SIZE);
     // https://crypto.stackexchange.com/questions/37629/pbkdf2-without-salt-on-16-digit-password
     // We really cannot do without a salt
-    unsigned char *const salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
+    unsigned char* salt = malloc(FIORINO_PBKDF2_SALT_SIZE);
+    unsigned char* iv = NULL;
+    unsigned char tag[FIORINO_GCM_TAG_SIZE] = {0};
+    char* fullpath = NULL;
+    char* fullpath_tmp = NULL;
+    unsigned char* serialized = NULL;
+    int result = 1;
+    if (contents == NULL || ciphertext == NULL || key == NULL || salt == NULL)
+        goto cleanup_encrypt;
+    if (fread(contents, 1, (size_t)fsize, file->file) != (size_t)fsize)
+        goto cleanup_encrypt;
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     int rc = RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE);
-    if (rc == 0) return 2;
+    if (rc != 1) { result = 2; goto cleanup_encrypt; }
     // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
     rc = PKCS5_PBKDF2_HMAC(
         vault->passphrase, -1,
@@ -223,26 +233,24 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
         FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
         FIORINO_KEY_SIZE, key
     );
-    if (rc == 0) return 2;
-    unsigned char *const iv = malloc(FIORINO_IV_SIZE);
+    if (rc != 1) { result = 2; goto cleanup_encrypt; }
+    iv = malloc(FIORINO_IV_SIZE);
+    if (iv == NULL) goto cleanup_encrypt;
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
     rc = RAND_priv_bytes(iv, FIORINO_IV_SIZE);
-    if (rc == 0) return 2;
-    unsigned char tag[FIORINO_GCM_TAG_SIZE];
+    if (rc != 1) { result = 2; goto cleanup_encrypt; }
     int encryptrc = encrypt(contents, fsize, key, iv, ciphertext, tag);
-    OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
-    free(key);
-    OPENSSL_cleanse(contents, fsize + 1);
-    free(contents);
-    if (encryptrc < 0) return 2;
+    if (encryptrc < 0) { result = 2; goto cleanup_encrypt; }
 
     /// \todo check the goddamn filename and vault name
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t root_path;
-    wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
-    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
-    char* fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0)
+        goto cleanup_encrypt;
+    fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
+    fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
     wordfree(&root_path);
+    if (fullpath == NULL || fullpath_tmp == NULL) goto cleanup_encrypt;
 
     struct FiorinoBundle bundle = {
         .ciphertext_len = (size_t)encryptrc,
@@ -252,38 +260,44 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     memcpy(bundle.salt, salt, sizeof bundle.salt);
     memcpy(bundle.tag, tag, sizeof bundle.tag);
     size_t serialized_len = 0;
-    unsigned char* serialized = serialize_bundle(&bundle, &serialized_len);
-    free(salt); free(iv); free(ciphertext);
-    if (serialized == NULL) {
-        free(fullpath_tmp);
-        free(fullpath);
-        return 1;
-    }
+    serialized = serialize_bundle(&bundle, &serialized_len);
+    if (serialized == NULL) goto cleanup_encrypt;
 
     FILE* file_enc = open_output_file(fullpath_tmp);
     if (file_enc == NULL) {
         /// \todo log with errno
-        free(serialized);
-        return 1;
+        goto cleanup_encrypt;
     }
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
 
     write_output_file(file_enc, serialized, serialized_len);
-    free(serialized);
 
     if (rename(fullpath_tmp, fullpath) == -1) {
         /// \todo log with errno
         /// \todo cleanup
-        free(fullpath_tmp);
-        free(fullpath);
-        return 1;
+        goto cleanup_encrypt;
     }
 
+    result = 0;
+
+cleanup_encrypt:
+    if (key != NULL) {
+        OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
+        free(key);
+    }
+    if (contents != NULL) {
+        OPENSSL_cleanse(contents, contents_len);
+        free(contents);
+    }
+    OPENSSL_cleanse(tag, sizeof tag);
+    free(salt);
+    free(iv);
+    free(ciphertext);
+    free(serialized);
     free(fullpath_tmp);
     free(fullpath);
-
-    return 0;
+    return result;
 }
 
 int fiorino_decrypt(struct Vault* vault, char* file) {
@@ -293,61 +307,90 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     // if (runtime_setup_file(file)) return 1;
 
     wordexp_t root_path;
-    wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, 0);
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0)
+        return 1;
     /// \todo Be careful with that "file", who knows what buffer overflows are coming
     char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
     wordfree(&root_path);
+    if (fullpath == NULL) return 1;
 
     FILE* file_enc = open_input_file(fullpath);
     if (file_enc == NULL) {
         /// \todo log
-        /// \todo cleanup
+        free(fullpath);
         return 1;
     }
     long long fsize = file_size(file_enc); // Very needed to check the file is not a crafted bomb payload
-    if (fsize > FIORINO_MAX_ENCRYPTED_SIZE) return 1;
-    unsigned char* const bundled = malloc(fsize);
-    fread(bundled, 1, fsize, file_enc);
+    if (fsize < 0 || fsize > FIORINO_MAX_ENCRYPTED_SIZE) {
+        fclose(file_enc);
+        free(fullpath);
+        return 1;
+    }
+    unsigned char* bundled = malloc((size_t)fsize);
+    if (bundled == NULL) {
+        fclose(file_enc);
+        free(fullpath);
+        return 1;
+    }
+    size_t bytes_read = fread(bundled, 1, (size_t)fsize, file_enc);
     fclose(file_enc);
-    struct FiorinoBundle* const bundle = deserialize_bundle(bundled, fsize);
+    if (bytes_read != (size_t)fsize) {
+        free(bundled);
+        free(fullpath);
+        return 1;
+    }
+    struct FiorinoBundle* bundle = deserialize_bundle(bundled, (size_t)fsize);
+    free(bundled);
+    if (bundle == NULL) {
+        free(fullpath);
+        return 1;
+    }
 
-    unsigned char *const key = malloc(FIORINO_KEY_SIZE);
+    unsigned char* key = malloc(FIORINO_KEY_SIZE);
+    unsigned char* plaintext = NULL;
+    size_t plaintext_size = 0;
+    int result = 1;
+    if (key == NULL) goto cleanup_decrypt;
     int rc = PKCS5_PBKDF2_HMAC(
         vault->passphrase, -1,
         bundle->salt, FIORINO_PBKDF2_SALT_SIZE,
         FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
         FIORINO_KEY_SIZE, key
     );
-    if (rc == 0) return 2;
+    if (rc != 1) { result = 2; goto cleanup_decrypt; }
 
-    unsigned char* const plaintext = malloc(bundle->ciphertext_len);
+    plaintext_size = bundle->ciphertext_len ? bundle->ciphertext_len : 1;
+    plaintext = malloc(plaintext_size);
+    if (plaintext == NULL) goto cleanup_decrypt;
     int decryptrc = decrypt(
         bundle->ciphertext, bundle->ciphertext_len, bundle->tag,
         key, bundle->iv, plaintext
     );
-    OPENSSL_cleanse(key, FIORINO_KEY_SIZE); // Never delete this for any reason
-    OPENSSL_free(key); // Never delete this for any reason
     if (decryptrc == -1) {
         /// \todo log
-        /// \todo cleanup
-        free(plaintext);
-        free(bundle);
-        free(fullpath);
-        return 1;
+        goto cleanup_decrypt;
     }
 
     FILE* exported = open_output_file(file);
     if (exported == NULL) {
         /// \todo log
-        /// \todo cleanup
-        return 1;
+        goto cleanup_decrypt;
     }
-    write_output_file(exported, plaintext, bundle->ciphertext_len);
+    write_output_file(exported, plaintext, (size_t)decryptrc);
 
-    /// \todo free some memory
+    result = 0;
+
+cleanup_decrypt:
+    if (key != NULL) {
+        OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
+        free(key);
+    }
+    if (plaintext != NULL) {
+        OPENSSL_cleanse(plaintext, plaintext_size);
+        free(plaintext);
+    }
     free(fullpath);
-    free(plaintext);
     free(bundle);
 
-    return 0;
+    return result;
 }
