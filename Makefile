@@ -24,10 +24,14 @@ build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h | buil
 build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/fiorino.so | build
 	cc $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
 
-test: build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup
+build/test_fiorino_roundtrip: tests/fiorino_roundtrip.c lib/fiorino.so | build
+	cc $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+
+test: build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup build/test_fiorino_roundtrip
 	./build/test_encrypt_gcm
 	./build/test_bundle
 	./build/test_encrypt_file_cleanup
+	./build/test_fiorino_roundtrip
 
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:
