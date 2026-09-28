@@ -145,6 +145,9 @@ int is_regular_file(const char *path) {
     return S_ISREG(path_stat.st_mode);
 }
 
+static char* output_path(const char* root, const char* vault,
+                         const char* name, const char* suffix);
+
 /** \brief Verifies that the file path is fine to decrypt
  * \warning The function allocates memory for the full path,
  *          the caller is responsible for deallocation
