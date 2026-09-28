@@ -87,6 +87,10 @@ int vault_directory_exists(struct Vault* vault) {
         return 1;
     int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1;
+    if (vaultpath_alloc > PATH_MAX) {
+        /// \todo log
+        return 1;
+    }
     char* vaultpath = malloc(vaultpath_alloc);
     if (vaultpath == NULL) {
         wordfree(&vault_root_path);
@@ -240,7 +244,13 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
 static char* output_path(const char* root, const char* vault,
                          const char* name, const char* suffix) {
     int length = snprintf(NULL, 0, "%s/%s/%s%s", root, vault, name, suffix);
-    if (length < 0) return NULL;
+    if (length < 0) {
+        /// \todo log
+        return NULL;
+    } else if (length + 4 > PATH_MAX) { // Could never fit ".tmp"
+        /// \todo log
+        return NULL;
+    }
 
     char* path = malloc((size_t)length + 1);
     if (path != NULL)
