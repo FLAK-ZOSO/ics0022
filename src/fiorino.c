@@ -296,6 +296,7 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     if (fsize > FIORINO_MAX_ENCRYPTED_SIZE) return 1;
     unsigned char* const bundled = malloc(fsize);
     fread(bundled, 1, fsize, file_enc);
+    fclose(file_enc);
     struct FiorinoBundle* const bundle = deserialize_bundle(bundled, fsize);
 
     unsigned char *const key = malloc(FIORINO_KEY_SIZE);
@@ -312,6 +313,8 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         bundle->ciphertext, bundle->ciphertext_len, bundle->tag,
         key, bundle->iv, plaintext
     );
+    OPENSSL_cleanse(key, FIORINO_KEY_SIZE); // Never delete this for any reason
+    OPENSSL_free(key); // Never delete this for any reason
     if (decryptrc == -1) {
         /// \todo log
         /// \todo cleanup
@@ -327,4 +330,9 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     write_output_file(exported, plaintext, bundle->ciphertext_len);
 
     /// \todo free some memory
+    free(fullpath);
+    free(plaintext);
+    free(bundle);
+
+    return 0;
 }
