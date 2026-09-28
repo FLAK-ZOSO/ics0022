@@ -81,6 +81,10 @@ int vault_root_directory_exists() {
  * \retval 1 failure
  */
 int vault_directory_exists(struct Vault* vault) {
+    if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") || strcmp(vault->vault, ".")) {
+        /// \todo log
+        return 1;
+    }
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
     if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0)
@@ -96,7 +100,6 @@ int vault_directory_exists(struct Vault* vault) {
         wordfree(&vault_root_path);
         return 1;
     }
-    /// \todo check that the path does not contain traversals
     sprintf(vaultpath, "%s/%s",
             vault_root_path.we_wordv[0], vault->vault);
     wordfree(&vault_root_path);
@@ -137,7 +140,8 @@ int runtime_setup() {
 }
 
 int runtime_setup_vault(struct Vault* vault) {
-    return vault_directory_exists(vault) || vault_user_corresponds(vault);
+    return vault_directory_exists(vault)
+        || vault_user_corresponds(vault);
 }
 
 /** \see https://stackoverflow.com/a/4553076/15888601 */
@@ -157,7 +161,7 @@ int is_regular_file(const char *path) {
  * \retval 1 failure
  */
 int runtime_setup_output_name(const char* name) {
-    if (strstr(name, "/")) {
+    if (strstr(name, "/") || strcmp(name, "..") || strcmp(name, ".")) {
         /// \todo log
         return 1;
     }
@@ -212,7 +216,7 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
      * \note Check for path traversal and other attacks
      * \note Reject .enc file extensions, as that is an internal implementation detail
      */
-    if (strstr(file, "/")) {
+    if (strstr(file, "/") || strcmp(file, "..") || strcmp(file, ".")) {
         /// \todo log
         return NULL;
     }
@@ -419,7 +423,6 @@ cleanup_encrypt:
 int fiorino_decrypt(struct Vault* vault, char* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
-    /// \todo do the due checks on this input argument
     char* fullpath = runtime_setup_file(vault, file);
     if (fullpath == NULL) return 1;
 
