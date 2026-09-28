@@ -279,7 +279,7 @@ static void write_output_file(FILE* output, const unsigned char* data,
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
-    if (runtime_setup_plaintext_file(file)) {
+    if (runtime_setup_plaintext_file(file->name)) {
         /// \todo log
         return 1;
     }
