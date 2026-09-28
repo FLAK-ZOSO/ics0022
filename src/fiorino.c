@@ -92,6 +92,7 @@ int vault_directory_exists(struct Vault* vault) {
         wordfree(&vault_root_path);
         return 1;
     }
+    /// \todo check that the path does not contain traversals
     sprintf(vaultpath, "%s/%s",
             vault_root_path.we_wordv[0], vault->vault);
     wordfree(&vault_root_path);
@@ -156,6 +157,39 @@ int runtime_setup_output_name(const char* name) {
         /// \todo log
         return 1;
     }
+    return 0;
+}
+
+/** \brief Validates the open plaintext file and obtains its size
+ * \note Leaves the stream positioned at the beginning for encryption
+ * \return Status code
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int runtime_setup_plaintext_file(FILE* input, long long* size) {
+    if (input == NULL || size == NULL) return 1;
+    int fd = fileno(input);
+    struct stat st;
+    if (fd < 0) {
+        /// \todo log "could not retrieve open file descriptor"
+        return 1;
+    } else if (fseek(input, 0, SEEK_SET) != 0) {
+        /// \todo log "could not set cursor to the beginning of the file"
+        return 1;
+    } else if (fstat(fd, &st) == -1) {
+        /// \todo log "could not retrieve file statistics"
+        return 1;
+    } else if (!S_ISREG(st.st_mode)) {
+        /// \todo log "not a regular file"
+        return 1;
+    } else if (st.st_size < 0) {
+        /// \todo log "could not retrieve file size"
+        return 1;
+    } else if (st.st_size > FIORINO_MAX_FILE_SIZE) {
+        /// \todo log "file too big for encryption by Fiorino"
+        return 1;
+    }
+    *size = st.st_size;
     return 0;
 }
 
@@ -276,8 +310,8 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
         return 1;
     }
 
-    long long fsize = file_size(file->file);
-    if (fsize < 0 || fsize > FIORINO_MAX_FILE_SIZE) return 1;
+    long long fsize;
+    if (runtime_setup_plaintext_file(file->file, &fsize)) return 1;
     size_t contents_len = (size_t)fsize + 1;
     unsigned char* contents = malloc(contents_len);
     unsigned char* ciphertext = malloc(contents_len);
