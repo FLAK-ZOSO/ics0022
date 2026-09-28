@@ -107,16 +107,15 @@ int main(void) {
 
     const unsigned char outside_sentinel[] = "this file is outside the vault";
     write_bytes("outside.enc", outside_sentinel, sizeof outside_sentinel);
-    encrypt_named(&vault, "../../outside", message, sizeof message);
-    size_t outside_len;
-    unsigned char* outside = read_bytes("outside.enc", &outside_len);
-    struct FiorinoBundle* outside_bundle = deserialize_bundle(outside, outside_len);
-    assert(outside_bundle != NULL);
-    assert(outside_bundle->ciphertext_len == sizeof message);
-    assert(outside_len != sizeof outside_sentinel ||
-           memcmp(outside, outside_sentinel, sizeof outside_sentinel) != 0);
-    free(outside_bundle);
-    free(outside);
+    FILE* traversal_source = tmpfile();
+    assert(traversal_source != NULL);
+    assert(fwrite(message, 1, sizeof message, traversal_source) == sizeof message);
+    struct FileToEncrypt traversal = {
+        .file = traversal_source, .name = "../../outside"
+    };
+    assert(fiorino_encrypt(&vault, &traversal) != 0);
+    assert(fclose(traversal_source) == 0);
+    assert_file_equals("outside.enc", outside_sentinel, sizeof outside_sentinel);
 
     assert(unlink("sample") == 0);
     assert(unlink("empty") == 0);
