@@ -145,22 +145,14 @@ int is_regular_file(const char *path) {
     return S_ISREG(path_stat.st_mode);
 }
 
-/** \brief Validates supplied plaintext file path
- * \param file The supplied plaintext file path
+/** \brief Validates the encrypted output name
+ * \param name The requested filename inside the vault
  * \return Status code
  * \retval 0 success
  * \retval 1 failure
  */
-int runtime_setup_plaintext_file(char* file) {
-    if (strstr(file, "/")) {
-        /// \todo log
-        return 1;
-    }
-    int regular = is_regular_file(file);
-    if (regular < 0) {
-        /// \todo log
-        return 1;
-    } else if (regular == 0) {
+int runtime_setup_output_name(const char* name) {
+    if (strstr(name, "/")) {
         /// \todo log
         return 1;
     }
@@ -279,7 +271,7 @@ static void write_output_file(FILE* output, const unsigned char* data,
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
-    if (runtime_setup_plaintext_file(file->name)) {
+    if (runtime_setup_output_name(file->name)) {
         /// \todo log
         return 1;
     }
