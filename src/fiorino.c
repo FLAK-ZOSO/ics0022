@@ -81,7 +81,8 @@ int vault_root_directory_exists() {
  * \retval 1 failure
  */
 int vault_directory_exists(struct Vault* vault) {
-    if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") || strcmp(vault->vault, ".")) {
+    if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") == 0 ||
+        strcmp(vault->vault, ".") == 0) {
         /// \todo log
         return 1;
     }
@@ -161,7 +162,8 @@ int is_regular_file(const char *path) {
  * \retval 1 failure
  */
 int runtime_setup_output_name(const char* name) {
-    if (strstr(name, "/") || strcmp(name, "..") || strcmp(name, ".")) {
+    if (strstr(name, "/") || strcmp(name, "..") == 0 ||
+        strcmp(name, ".") == 0) {
         /// \todo log
         return 1;
     }
@@ -216,7 +218,8 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
      * \note Check for path traversal and other attacks
      * \note Reject .enc file extensions, as that is an internal implementation detail
      */
-    if (strstr(file, "/") || strcmp(file, "..") || strcmp(file, ".")) {
+    if (strstr(file, "/") || strcmp(file, "..") == 0 ||
+        strcmp(file, ".") == 0) {
         /// \todo log
         return NULL;
     }
