@@ -203,6 +203,7 @@ static void write_output_file(FILE* output, const unsigned char* data,
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
+
     long long fsize = file_size(file->file);
     if (fsize > FIORINO_MAX_FILE_SIZE) return 1;
     unsigned char *const contents = malloc(fsize + 1);
@@ -229,6 +230,10 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (rc == 0) return 2;
     unsigned char tag[FIORINO_GCM_TAG_SIZE];
     int encryptrc = encrypt(contents, fsize, key, iv, ciphertext, tag);
+    OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
+    free(key);
+    OPENSSL_cleanse(contents, fsize + 1);
+    free(contents);
     if (encryptrc < 0) return 2;
 
     /// \todo check the goddamn filename and vault name
@@ -248,8 +253,12 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     memcpy(bundle.tag, tag, sizeof bundle.tag);
     size_t serialized_len = 0;
     unsigned char* serialized = serialize_bundle(&bundle, &serialized_len);
-    if (serialized == NULL) return 1;
-
+    free(salt); free(iv); free(ciphertext);
+    if (serialized == NULL) {
+        free(fullpath_tmp);
+        free(fullpath);
+        return 1;
+    }
 
     FILE* file_enc = open_output_file(fullpath_tmp);
     if (file_enc == NULL) {
@@ -265,6 +274,9 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
 
     if (rename(fullpath_tmp, fullpath) == -1) {
         /// \todo log with errno
+        /// \todo cleanup
+        free(fullpath_tmp);
+        free(fullpath);
         return 1;
     }
 
@@ -318,6 +330,9 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     if (decryptrc == -1) {
         /// \todo log
         /// \todo cleanup
+        free(plaintext);
+        free(bundle);
+        free(fullpath);
         return 1;
     }
 
