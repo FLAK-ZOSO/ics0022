@@ -117,6 +117,18 @@ int main(void) {
     assert(fclose(traversal_source) == 0);
     assert_file_equals("outside.enc", outside_sentinel, sizeof outside_sentinel);
 
+    struct Vault escaped_vault = vault;
+    escaped_vault.vault = "..";
+    FILE* vault_source = tmpfile();
+    assert(vault_source != NULL);
+    assert(fwrite(message, 1, sizeof message, vault_source) == sizeof message);
+    struct FileToEncrypt vault_escape = {
+        .file = vault_source, .name = "outside"
+    };
+    assert(fiorino_encrypt(&escaped_vault, &vault_escape) != 0);
+    assert(fclose(vault_source) == 0);
+    assert_file_equals("outside.enc", outside_sentinel, sizeof outside_sentinel);
+
     assert(unlink("sample") == 0);
     assert(unlink("empty") == 0);
     assert(unlink("outside.enc") == 0);
