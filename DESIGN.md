@@ -195,5 +195,6 @@ I want to link dynamically against OpenSSL as I know that realistically I won't 
 - logging with proper [facilities](https://www.manageengine.com/products/eventlog/logging-guide/syslog/syslog-facilities.html)
 - we can use `st_dev` to ensure that different mirrors are on different partitions
 - consider [this](https://unix.stackexchange.com/questions/452620/is-mv-atomic-operation-between-two-file-systems) when syncing mirrors
+- handle the signals!
 - don't hardcode `gcc` in build scripts
 ![Don't hardcode gcc in build scripts](images/ifYouHardcode.png)
