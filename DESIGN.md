@@ -196,5 +196,6 @@ I want to link dynamically against OpenSSL as I know that realistically I won't 
 - we can use `st_dev` to ensure that different mirrors are on different partitions
 - consider [this](https://unix.stackexchange.com/questions/452620/is-mv-atomic-operation-between-two-file-systems) when syncing mirrors
 - handle the signals!
+- consider using the [OpenSSL secure heap](https://docs.openssl.org/3.5/man3/OPENSSL_secure_malloc/#description) at least for the keys
 - don't hardcode `gcc` in build scripts
 ![Don't hardcode gcc in build scripts](images/ifYouHardcode.png)
