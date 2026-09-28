@@ -135,6 +135,53 @@ int runtime_setup_vault(struct Vault* vault) {
     return vault_directory_exists(vault) || vault_user_corresponds(vault);
 }
 
+/** \see https://stackoverflow.com/a/4553076/15888601 */
+int is_regular_file(const char *path) {
+    struct stat path_stat;
+    if (stat(path, &path_stat) == -1) {
+        /// \todo log
+        return -1;
+    }
+    return S_ISREG(path_stat.st_mode);
+}
+
+/** \brief Verifies that the file path is fine to decrypt
+ * \warning The function allocates memory for the full path,
+ *          the caller is responsible for deallocation
+ * \return Full path to the encrypted file
+ * \retval NULL failure
+ */
+char* runtime_setup_file(const struct Vault* vault, const char* file) {
+    /** \warning we must ensure not to fall in a race condition with an attacker
+     *           replacing that path with a dangerous symlink
+     * \note Check for path traversal and other attacks
+     * \note Reject .enc file extensions, as that is an internal implementation detail
+     */
+    if (strstr(file, "../")) { /** \todo this */}
+
+    wordexp_t root_path;
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
+        /** \todo log */
+        wordfree(&root_path);
+        return NULL;
+    }
+    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
+    wordfree(&root_path);
+    if (fullpath == NULL) {
+        /// \todo log
+        return NULL;
+    }
+    int regular = is_regular_file(file);
+    if (regular < 0) {
+        /// \todo log
+        return NULL;
+    } else if (regular == 0) {
+        /// \todo log
+        return NULL;
+    }
+    return 0;
+}
+
 static char* output_path(const char* root, const char* vault,
                          const char* name, const char* suffix) {
     int length = snprintf(NULL, 0, "%s/%s/%s%s", root, vault, name, suffix);
@@ -304,14 +351,7 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     /// \todo do the due checks on this input argument
-    // if (runtime_setup_file(file)) return 1;
-
-    wordexp_t root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0)
-        return 1;
-    /// \todo Be careful with that "file", who knows what buffer overflows are coming
-    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
-    wordfree(&root_path);
+    char* fullpath = runtime_setup_file(vault, file);
     if (fullpath == NULL) return 1;
 
     FILE* file_enc = open_input_file(fullpath);
