@@ -15,10 +15,13 @@ struct Vault {
     char* passphrase; ///< attempted passphrase
 };
 
-/** \see https://stackoverflow.com/a/7988834/15888601 */
+/** \brief Open input stream and the desired name for its encrypted output.
+ * \note name is a single filename, not a path. It is independent of the
+ *       input stream's pathname; the input may have no pathname at all.
+ */
 struct FileToEncrypt {
-    FILE* file;
-    char* name;
+    FILE* file; ///< Open stream supplying the plaintext bytes.
+    char* name; ///< Desired basename of the encrypted file in the vault.
 };
 
 /** \brief Decrypts a file from a vault
@@ -34,7 +37,7 @@ int fiorino_decrypt(struct Vault* vault, char* file);
 
 /** \brief Encrypts a file to a vault
  * \param vault The information of the vault to encrypt to
- * \param file File to encrypt, open in read binary mode
+ * \param file Open plaintext stream and an independent encrypted output name
  * \note The caller is responsible for the allocation of the vault and members
  * \note The caller is responsible for closing the file
  * \note It overwrites pre-existing files, as a file manager should
