@@ -168,7 +168,6 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
     wordexp_t root_path;
     if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
         /** \todo log */
-        wordfree(&root_path);
         return NULL;
     }
     char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
@@ -177,15 +176,17 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
         /// \todo log
         return NULL;
     }
-    int regular = is_regular_file(file);
+    int regular = is_regular_file(fullpath);
     if (regular < 0) {
         /// \todo log
+        free(fullpath);
         return NULL;
     } else if (regular == 0) {
         /// \todo log
+        free(fullpath);
         return NULL;
     }
-    return 0;
+    return fullpath;
 }
 
 static char* output_path(const char* root, const char* vault,
