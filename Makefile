@@ -1,4 +1,7 @@
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L -I./src -Wall -MMD -MP
+VALGRIND ?= valgrind
+VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
+TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup build/test_fiorino_roundtrip
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/fiorino.so
@@ -27,11 +30,16 @@ build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/fiorino.so | b
 build/test_fiorino_roundtrip: tests/fiorino_roundtrip.c lib/fiorino.so | build
 	cc $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
 
-test: build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup build/test_fiorino_roundtrip
+test: $(TEST_BINS)
 	./build/test_encrypt_gcm
 	./build/test_bundle
 	./build/test_encrypt_file_cleanup
 	./build/test_fiorino_roundtrip
+
+memtest: $(TEST_BINS)
+	@status=0; for test in $(TEST_BINS); do \
+		$(VALGRIND) $(VALGRIND_FLAGS) ./$$test || status=1; \
+	done; exit $$status
 
 # # https://stackoverflow.com/a/45048948/15888601
 # directories:
@@ -44,4 +52,4 @@ test: build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup b
 clean:
 	rm -r build lib
 
-.PHONY: all clean test
+.PHONY: all clean test memtest
