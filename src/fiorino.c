@@ -157,7 +157,10 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
      * \note Check for path traversal and other attacks
      * \note Reject .enc file extensions, as that is an internal implementation detail
      */
-    if (strstr(file, "../")) { /** \todo this */}
+    if (strstr(file, "/")) {
+        /// \todo log
+        return NULL;
+    }
 
     wordexp_t root_path;
     if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
