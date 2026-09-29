@@ -148,7 +148,8 @@ int runtime_setup_vault(struct Vault* vault) {
 /** \see https://stackoverflow.com/a/4553076/15888601 */
 int is_regular_file(const char *path) {
     struct stat path_stat;
-    if (stat(path, &path_stat) == -1) {
+    /// \see https://stackoverflow.com/a/2635948/15888601
+    if (lstat(path, &path_stat) == -1) {
         /// \todo log
         return -1;
     }
