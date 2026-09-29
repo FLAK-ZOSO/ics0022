@@ -1,4 +1,7 @@
-CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L -I./src -Wall -g -MMD -MP
+ASMFLAGS=-S -fverbose-asm
+DBGFLAGS=-g
+CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
+	-I./src -Wall -Wextra -fsanitize=undefined $(DBGFLAGS) -MMD -MP
 VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup build/test_fiorino_limits build/test_fiorino_roundtrip build/test_fiorino_symlink
