@@ -94,6 +94,7 @@ int vault_directory_exists(struct Vault* vault) {
         + strlen(vault->vault) + 1;
     if (vaultpath_alloc > PATH_MAX) {
         /// \todo log
+        wordfree(&vault_root_path);
         return 1;
     }
     char* vaultpath = malloc(vaultpath_alloc);
