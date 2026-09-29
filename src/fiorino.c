@@ -267,16 +267,75 @@ static char* output_path(const char* root, const char* vault,
     return path;
 }
 
-static FILE* open_output_file(const char* path) {
-    FILE* output = fopen(path, "wb");
-    if (output == NULL) return NULL;
+static FILE* open_output_file_to_vault(const char* path) {
+    int fd = open(path, O_WRONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK,
+                  FIORINO_VAULT_PERM);
+    if (fd == -1) return NULL;
 
-    int lockrc = flock(fileno(output), LOCK_SH);
-    if (lockrc == -1) {
-        /// \todo log with errno
-    }
-    if (chmod(path, FIORINO_VAULT_PERM) == -1) {
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
         /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (!S_ISREG(st.st_mode)) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (flock(fd, LOCK_EX) == -1) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (fchmod(fd, FIORINO_VAULT_PERM) == -1) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (ftruncate(fd, 0) == -1) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    FILE* output = fdopen(fd, "wb");
+    if (output == NULL) {
+        /// \todo log
+        close(fd);
+        return NULL; // Ok this is funny but I like it explicit
+    }
+    return output;
+}
+
+static FILE* open_output_file_to_user(const char* path) {
+    int fd = open(path, O_WRONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK,
+                  FIORINO_VAULT_PERM); // If the file doesn't exist yet, set permission
+    if (fd == -1) return NULL;
+
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (!S_ISREG(st.st_mode)) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    if (flock(fd, LOCK_EX) == -1) {
+        close(fd);
+        return NULL;
+    }
+    if (ftruncate(fd, 0) == -1) {
+        /// \todo log
+        close(fd);
+        return NULL;
+    }
+    FILE* output = fdopen(fd, "wb");
+    if (output == NULL) {
+        close(fd);
+        return NULL;
     }
     return output;
 }
@@ -387,9 +446,9 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     serialized = serialize_bundle(&bundle, &serialized_len);
     if (serialized == NULL) goto cleanup_encrypt;
 
-    FILE* file_enc = open_output_file(fullpath_tmp);
+    FILE* file_enc = open_output_file_to_vault(fullpath_tmp);
     if (file_enc == NULL) {
-        /// \todo log with errno
+        /// \todo log
         goto cleanup_encrypt;
     }
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
@@ -487,7 +546,7 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         goto cleanup_decrypt;
     }
 
-    FILE* exported = open_output_file(file);
+    FILE* exported = open_output_file_to_user(file);
     if (exported == NULL) {
         /// \todo log
         goto cleanup_decrypt;
