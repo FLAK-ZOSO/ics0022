@@ -43,8 +43,35 @@ int main(void) {
     assert(fclose(target) == 0);
     assert(decrypt_result != 0);
 
+    assert(symlink("../../private.txt", ".fiorino/test/blocked.enc.tmp") == 0);
+    source = tmpfile();
+    assert(source != NULL);
+    assert(fwrite(secret, 1, sizeof secret, source) == sizeof secret);
+    struct FileToEncrypt blocked = { .file = source, .name = "blocked" };
+    assert(fiorino_encrypt(&vault, &blocked) != 0);
+    assert(fclose(source) == 0);
+    target = fopen("private.txt", "rb");
+    assert(target != NULL);
+    assert(fread(actual, 1, sizeof actual, target) == sizeof actual);
+    assert(memcmp(actual, sentinel, sizeof sentinel) == 0);
+    assert(fclose(target) == 0);
+
+    assert(unlink(".fiorino/test/blocked.enc.tmp") == 0);
+    target = fopen(".fiorino/test/blocked.enc.tmp", "wb");
+    assert(target != NULL);
+    assert(fclose(target) == 0);
+    source = tmpfile();
+    assert(source != NULL);
+    assert(fwrite(secret, 1, sizeof secret, source) == sizeof secret);
+    assert(fiorino_encrypt(&vault, &(struct FileToEncrypt){
+        .file = source, .name = "blocked" }) == 0);
+    assert(fclose(source) == 0);
+    assert(access(".fiorino/test/blocked.enc", F_OK) == 0);
+    assert(access(".fiorino/test/blocked.enc.tmp", F_OK) != 0);
+
     assert(unlink("report") == 0);
     assert(unlink("private.txt") == 0);
+    assert(unlink(".fiorino/test/blocked.enc") == 0);
     assert(unlink(".fiorino/test/report.enc") == 0);
     assert(rmdir(".fiorino/test") == 0);
     assert(rmdir(".fiorino") == 0);
