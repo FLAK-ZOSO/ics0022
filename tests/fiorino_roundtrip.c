@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static void write_bytes(const char* path, const unsigned char* bytes,
@@ -62,11 +63,15 @@ int main(void) {
                            .passphrase = "correct password" };
     const unsigned char message[] = {0, 1, 255, 0, 'A', '\n'};
     encrypt_named(&vault, "sample", message, sizeof message);
+    struct stat st;
+    assert(stat(".fiorino/test/sample.enc", &st) == 0);
+    assert((st.st_mode & 0777) == FIORINO_VAULT_PERM);
     assert(fiorino_decrypt(&vault, "sample") == 0);
     assert_file_equals("sample", message, sizeof message);
 
     const unsigned char sentinel[] = "keep this file";
     write_bytes("sample", sentinel, sizeof sentinel);
+    assert(chmod("sample", 0640) == 0);
     struct Vault wrong = vault;
     wrong.passphrase = "wrong password";
     assert(fiorino_decrypt(&wrong, "sample") != 0);
@@ -97,6 +102,10 @@ int main(void) {
     assert_file_equals("sample", sentinel, sizeof sentinel);
     write_bytes(bundle_path, original, bundle_len);
     free(original);
+    assert(fiorino_decrypt(&vault, "sample") == 0);
+    assert_file_equals("sample", message, sizeof message);
+    assert(stat("sample", &st) == 0);
+    assert((st.st_mode & 0777) == 0640);
 
     assert(fiorino_decrypt(&vault, "missing") != 0);
     assert(access("missing", F_OK) != 0);
