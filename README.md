@@ -44,3 +44,26 @@ Only Linux systems are supported.
 ```bash
 make
 ```
+
+## Logging
+
+Fiorino sends messages through `syslog(3)`. On Fedora, journald receives them.
+Messages are prefixed with `fiorino:` and use the calling program's journal
+identity. The default threshold is `FIORINO_LOG_WARNING`.
+Warnings report rejected inputs and paths the caller can correct. Errors
+report failures while setting up or writing vault data. An `errno` value
+provides detail about the failure; it does not determine its severity.
+
+```c
+#include <fiorino_log.h>
+
+fiorino_log_set_threshold(FIORINO_LOG_DEBUG); /* include debug messages */
+fiorino_log_set_threshold(FIORINO_LOG_OFF);   /* silence Fiorino */
+```
+
+The threshold is process-wide for Fiorino. The host program's syslog settings
+can further restrict messages. To inspect messages on a journald system:
+
+```bash
+journalctl --grep='fiorino:'
+```

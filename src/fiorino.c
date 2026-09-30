@@ -1,6 +1,7 @@
 #include <fiorino.h>
 #include <bundle.h>
 #include <encrypt.h>
+#include <fiorino_log.h>
 
 #include <fcntl.h> // open
 #include <errno.h>
@@ -20,6 +21,14 @@
                                     + FIORINO_IV_SIZE \
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
+
+static void log_error(const char* message) {
+    fiorino_log_message(FIORINO_LOG_ERROR, "%s", message);
+}
+
+static void log_warning(const char* message) {
+    fiorino_log_message(FIORINO_LOG_WARNING, "%s", message);
+}
 
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
@@ -52,20 +61,21 @@ long long file_size(FILE* file) {
 int vault_root_directory_exists() {
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0)
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0) {
+        log_error("could not expand vault root path");
         return 1;
+    }
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
     if (stat(vault_root_path.we_wordv[0], &st) == -1) {
-        /// \todo log
         if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
-            /// \todo log
-
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not create vault root directory", vault_root_path.we_wordv[0]);
         }
     } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
-        /// \todo log
         if (chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
-            /// \todo log
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not set vault root permissions", vault_root_path.we_wordv[0]);
             wordfree(&vault_root_path);
             return 1;
         }
@@ -83,17 +93,19 @@ int vault_root_directory_exists() {
 int vault_directory_exists(struct Vault* vault) {
     if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") == 0 ||
         strcmp(vault->vault, ".") == 0) {
-        /// \todo log
+        log_warning("invalid vault name");
         return 1;
     }
     // https://stackoverflow.com/a/15991337/15888601
     wordexp_t vault_root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0)
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0) {
+        log_error("could not expand vault root path");
         return 1;
+    }
     int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
         + strlen(vault->vault) + 1;
     if (vaultpath_alloc > PATH_MAX) {
-        /// \todo log
+        log_warning("vault path is too long");
         wordfree(&vault_root_path);
         return 1;
     }
@@ -109,15 +121,14 @@ int vault_directory_exists(struct Vault* vault) {
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
     if (stat(vaultpath, &st) == -1) {
-        /// \todo log
         if (mkdir(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
-            /// \todo log
-
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not create vault directory", vaultpath);
         }
     } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
-        /// \todo log
         if (chmod(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
-            /// \todo log
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not set vault permissions", vaultpath);
             free(vaultpath);
             return 1;
         }
@@ -133,8 +144,11 @@ int vault_directory_exists(struct Vault* vault) {
  * \retval 1 failure
  */
 int vault_user_corresponds(struct Vault* vault) {
-    /// \todo log
-    return vault->user != geteuid();
+    if (vault->user != geteuid()) {
+        log_warning("vault user does not match effective user");
+        return 1;
+    }
+    return 0;
 }
 
 int runtime_setup() {
@@ -151,7 +165,7 @@ int is_regular_file(const char *path) {
     struct stat path_stat;
     /// \see https://stackoverflow.com/a/2635948/15888601
     if (lstat(path, &path_stat) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_WARNING, "could not inspect file", path);
         return -1;
     }
     return S_ISREG(path_stat.st_mode);
@@ -166,7 +180,7 @@ int is_regular_file(const char *path) {
 int runtime_setup_output_name(const char* name) {
     if (strstr(name, "/") || strcmp(name, "..") == 0 ||
         strcmp(name, ".") == 0) {
-        /// \todo log
+        log_warning("invalid output name");
         return 1;
     }
     return 0;
@@ -183,22 +197,25 @@ int runtime_setup_plaintext_file(FILE* input, long long* size) {
     int fd = fileno(input);
     struct stat st;
     if (fd < 0) {
-        /// \todo log "could not retrieve open file descriptor"
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not retrieve open file descriptor", "input");
         return 1;
     } else if (fseek(input, 0, SEEK_SET) != 0) {
-        /// \todo log "could not set cursor to the beginning of the file"
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not rewind input file", "input");
         return 1;
     } else if (fstat(fd, &st) == -1) {
-        /// \todo log "could not retrieve file statistics"
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not retrieve file statistics", "input");
         return 1;
     } else if (!S_ISREG(st.st_mode)) {
-        /// \todo log "not a regular file"
+        log_warning("input is not a regular file");
         return 1;
     } else if (st.st_size < 0) {
-        /// \todo log "could not retrieve file size"
+        log_warning("input file has an invalid size");
         return 1;
     } else if (st.st_size > FIORINO_MAX_FILE_SIZE) {
-        /// \todo log "file too big for encryption by Fiorino"
+        log_warning("input file is too big for encryption");
         return 1;
     }
     *size = st.st_size;
@@ -222,28 +239,27 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
      */
     if (strstr(file, "/") || strcmp(file, "..") == 0 ||
         strcmp(file, ".") == 0) {
-        /// \todo log
+        log_warning("invalid encrypted file name");
         return NULL;
     }
 
     wordexp_t root_path;
     if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
-        /** \todo log */
+        log_error("could not expand vault root path");
         return NULL;
     }
     char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
     wordfree(&root_path);
     if (fullpath == NULL) {
-        /// \todo log
+        log_error("could not construct encrypted file path");
         return NULL;
     }
     int regular = is_regular_file(fullpath);
     if (regular < 0) {
-        /// \todo log
         free(fullpath);
         return NULL;
     } else if (regular == 0) {
-        /// \todo log
+        log_warning("encrypted input is not a regular file");
         free(fullpath);
         return NULL;
     }
@@ -254,10 +270,10 @@ static char* output_path(const char* root, const char* vault,
                          const char* name, const char* suffix) {
     int length = snprintf(NULL, 0, "%s/%s/%s%s", root, vault, name, suffix);
     if (length < 0) {
-        /// \todo log
+        log_error("could not format output path");
         return NULL;
     } else if (length + 4 > PATH_MAX) { // Could never fit ".tmp"
-        /// \todo log
+        log_warning("output path is too long");
         return NULL;
     }
 
@@ -271,37 +287,43 @@ static char* output_path(const char* root, const char* vault,
 static FILE* open_output_file_to_vault(const char* path) {
     int fd = open(path, O_WRONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK,
                   FIORINO_VAULT_PERM);
-    if (fd == -1) return NULL;
+    if (fd == -1) {
+        fiorino_log_errno(errno == ELOOP ? FIORINO_LOG_WARNING : FIORINO_LOG_ERROR,
+                          "could not open vault output", path);
+        return NULL;
+    }
 
     struct stat st;
     if (fstat(fd, &st) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not inspect vault output", path);
         close(fd);
         return NULL;
     }
     if (!S_ISREG(st.st_mode)) {
-        /// \todo log
+        log_warning("vault output is not a regular file");
         close(fd);
         return NULL;
     }
     if (flock(fd, LOCK_EX) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not lock vault output", path);
         close(fd);
         return NULL;
     }
     if (fchmod(fd, FIORINO_VAULT_PERM) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not set vault output permissions", path);
         close(fd);
         return NULL;
     }
     if (ftruncate(fd, 0) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not truncate vault output", path);
         close(fd);
         return NULL;
     }
     FILE* output = fdopen(fd, "wb");
     if (output == NULL) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not create vault output stream", path);
         close(fd);
         return NULL; // Ok this is funny but I like it explicit
     }
@@ -311,30 +333,36 @@ static FILE* open_output_file_to_vault(const char* path) {
 static FILE* open_output_file_to_user(const char* path) {
     int fd = open(path, O_WRONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK,
                   FIORINO_VAULT_PERM); // If the file doesn't exist yet, set permission
-    if (fd == -1) return NULL;
+    if (fd == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING, "could not open user output", path);
+        return NULL;
+    }
 
     struct stat st;
     if (fstat(fd, &st) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not inspect user output", path);
         close(fd);
         return NULL;
     }
     if (!S_ISREG(st.st_mode)) {
-        /// \todo log
+        log_warning("user output is not a regular file");
         close(fd);
         return NULL;
     }
     if (flock(fd, LOCK_EX) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not lock user output", path);
         close(fd);
         return NULL;
     }
     if (ftruncate(fd, 0) == -1) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not truncate user output", path);
         close(fd);
         return NULL;
     }
     FILE* output = fdopen(fd, "wb");
     if (output == NULL) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not create user output stream", path);
         close(fd);
         return NULL;
     }
@@ -374,7 +402,7 @@ static FILE* open_input_file(const char* path) {
 static void write_output_file(FILE* output, const unsigned char* data,
                               size_t length) {
     if (fwrite(data, 1, length, output) != length) {
-        /// \todo log with errno
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not write output", "stream");
     }
     flock(fileno(output), LOCK_UN);
     fclose(output);
@@ -384,7 +412,6 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     if (runtime_setup_output_name(file->name)) {
-        /// \todo log
         return 1;
     }
 
@@ -449,7 +476,6 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
 
     FILE* file_enc = open_output_file_to_vault(fullpath_tmp);
     if (file_enc == NULL) {
-        /// \todo log
         goto cleanup_encrypt;
     }
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
@@ -458,7 +484,8 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     write_output_file(file_enc, serialized, serialized_len);
 
     if (rename(fullpath_tmp, fullpath) == -1) {
-        /// \todo log with errno
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not replace encrypted file", fullpath);
         /// \todo cleanup
         goto cleanup_encrypt;
     }
@@ -492,7 +519,8 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
 
     FILE* file_enc = open_input_file(fullpath);
     if (file_enc == NULL) {
-        /// \todo log
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not open encrypted file", fullpath);
         free(fullpath);
         return 1;
     }
@@ -543,13 +571,12 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         key, bundle->iv, plaintext
     );
     if (decryptrc == -1) {
-        /// \todo log
+        log_warning("decryption failed or authentication tag is invalid");
         goto cleanup_decrypt;
     }
 
     FILE* exported = open_output_file_to_user(file);
     if (exported == NULL) {
-        /// \todo log
         goto cleanup_decrypt;
     }
     write_output_file(exported, plaintext, (size_t)decryptrc);
