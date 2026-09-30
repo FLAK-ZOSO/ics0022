@@ -373,7 +373,7 @@ static FILE* open_input_file(const char* path) {
 
 static void write_output_file(FILE* output, const unsigned char* data,
                               size_t length) {
-    if (!fwrite(data, 1, length, output)) {
+    if (fwrite(data, 1, length, output) != length) {
         /// \todo log with errno
     }
     flock(fileno(output), LOCK_UN);
