@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 
 static atomic_int threshold = FIORINO_LOG_WARNING;
