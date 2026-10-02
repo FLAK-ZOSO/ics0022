@@ -1,8 +1,17 @@
 #include <bundle.h>
+#include <fiorino_log.h>
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
+
+static int last_priority = -1;
+
+void syslog(int priority, const char* format, ...) {
+    (void)format;
+    last_priority = priority;
+}
 
 enum { HEADER_LEN = FIORINO_IV_SIZE + FIORINO_PBKDF2_SALT_SIZE,
        OVERHEAD = HEADER_LEN + FIORINO_GCM_TAG_SIZE };
@@ -65,6 +74,7 @@ static void check_round_trip(size_t ciphertext_len) {
 static void check_invalid_input(void) {
     unsigned char small[OVERHEAD + 1] = {0};
     assert(deserialize_bundle(NULL, OVERHEAD) == NULL);
+    assert(last_priority == (LOG_USER | LOG_WARNING));
     for (size_t len = 0; len < OVERHEAD; ++len)
         assert(deserialize_bundle(small, len) == NULL);
     struct FiorinoBundle* empty = deserialize_bundle(small, OVERHEAD);

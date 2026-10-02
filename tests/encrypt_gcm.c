@@ -1,7 +1,16 @@
 #include <encrypt.h>
+#include <fiorino_log.h>
 
 #include <assert.h>
 #include <string.h>
+#include <syslog.h>
+
+static int last_priority = -1;
+
+void syslog(int priority, const char* format, ...) {
+    (void)format;
+    last_priority = priority;
+}
 
 static void check(const unsigned char *message, int message_len) {
     unsigned char key[FIORINO_KEY_SIZE] = {0};
@@ -17,6 +26,7 @@ static void check(const unsigned char *message, int message_len) {
 
     tag[FIORINO_GCM_TAG_SIZE - 1] ^= 1;
     assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
+    assert(last_priority == (LOG_USER | LOG_WARNING));
     tag[FIORINO_GCM_TAG_SIZE - 1] ^= 1;
     if (message_len > 0) {
         encrypted[0] ^= 1;

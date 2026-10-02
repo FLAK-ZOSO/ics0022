@@ -17,7 +17,7 @@ all: lib/fiorino.so
 build lib:
 	mkdir -p $@
 
-build/%.o: src/%.c src/%.h | build
+build/%.o: src/%.c src/%.h src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -fPIC -c -o $@ $<
 
 lib/fiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
@@ -26,11 +26,11 @@ lib/fiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log
 lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	ar rcs $@ $^
 
-build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h | build
-	$(CC) $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c -lcrypto
+build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h src/fiorino_log.c src/fiorino_log.h | build
+	$(CC) $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c src/fiorino_log.c -lcrypto
 
-build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h | build
-	$(CC) $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c
+build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h src/fiorino_log.c src/fiorino_log.h | build
+	$(CC) $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c src/fiorino_log.c
 
 build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/fiorino.so | build
 	$(CC) $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib

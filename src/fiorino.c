@@ -470,7 +470,6 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     }
     int encryptrc = encrypt(contents, fsize, key, iv, ciphertext, tag);
     if (encryptrc < 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "encryption failed");
         result = 2; goto cleanup_encrypt;
     }
 
@@ -495,10 +494,7 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     memcpy(bundle.tag, tag, sizeof bundle.tag);
     size_t serialized_len = 0;
     serialized = serialize_bundle(&bundle, &serialized_len);
-    if (serialized == NULL) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not serialize encrypted bundle");
-        goto cleanup_encrypt;
-    }
+    if (serialized == NULL) goto cleanup_encrypt;
 
     FILE* file_enc = open_output_file_to_vault(fullpath_tmp);
     if (file_enc == NULL) goto cleanup_encrypt;
@@ -571,7 +567,6 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
     struct FiorinoBundle* bundle = deserialize_bundle(bundled, (size_t)fsize);
     free(bundled);
     if (bundle == NULL) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "encrypted file has an invalid bundle");
         free(fullpath);
         return 1;
     }
@@ -606,8 +601,6 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
         key, bundle->iv, plaintext
     );
     if (decryptrc == -1) {
-        fiorino_log_message(FIORINO_LOG_WARNING,
-                            "decryption failed or authentication tag is invalid");
         goto cleanup_decrypt;
     }
 
