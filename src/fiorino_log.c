@@ -19,3 +19,20 @@ int fiorino_log_set_threshold(enum FiorinoLogLevel level) {
 enum FiorinoLogLevel fiorino_log_get_threshold(void) {
     return atomic_load(&threshold);
 }
+
+
+void fiorino_log_message(enum FiorinoLogLevel level, const char* format, ...) {
+
+}
+
+/** \brief Logs with information retrieved from the errno
+ *  \note The errno value is preserved by the function
+ */
+void fiorino_log_errno(enum FiorinoLogLevel level, const char* action, const char* path) {
+    int error = errno;
+    char description[128];
+    if (strerror_r(error, description, sizeof description) != 0)
+        snprintf(description, sizeof description, "errno %d", error);
+    fiorino_log_message(level, "%s '%s': %s", action, path, description);
+    errno = error;
+}
