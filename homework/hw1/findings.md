@@ -202,27 +202,27 @@ I am ordering them roughly from the most to the least severe.
 
 ### Location
 
-program.c at line 14
+program.c at line 11
 
 ### Weakness class
 
-[CWE-191](https://cwe.mitre.org/data/definitions/191.html) Integer Underflow
+[CWE-120](https://cwe.mitre.org/data/definitions/120.html) Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
 
 ### Mechanism
 
-An unsigned integer is taken as input through scanf, but scanf has no mechanism to enforce the type of its input and thus a small negative value will wrap around to be an obscenely large 32-bit positive value.
+A function reads to a buffer, but it reads more bytes than the buffer can contain, thus "overflowing" (writing past its end) it.
 
 ### Evidence
 
-Test 4 from part B
+Test 2 from part B
 
 ### Impact
 
-A user prefixing with a dash their own age will have an implausibly large age.
+TODO
 
 ### Remediation
 
-As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer and then the appropriate one from the `ato*` family of functions.
+As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%29s`).
 
 
 ## 5. Integer underflow
