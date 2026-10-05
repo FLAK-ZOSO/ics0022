@@ -210,7 +210,7 @@ program.c at line 11
 
 ### Mechanism
 
-A function reads to a buffer, but it reads more bytes than the buffer can contain, thus "overflowing" (writing past its end) it.
+A function reads to a buffer, but it reads more bytes than the buffer can contain, thus "overflowing" (writing past its end) it. Also, it can cause a second overflow as the same string is then written into the username, but 40+11 goes further than the capacity of 32.
 
 ### Evidence
 
@@ -218,11 +218,11 @@ Test 2 from part B
 
 ### Impact
 
-TODO
+User provided input can crash the program.
 
 ### Remediation
 
-As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%29s`).
+As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%15s`).
 
 
 ## 5. Integer underflow
