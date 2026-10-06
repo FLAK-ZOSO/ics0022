@@ -413,6 +413,21 @@ Age: 40
 [FATAL] users_innocent-file.txt existed already, and as a symlink
 ```
 
+### 2. NULL pointer dereference
+
+The patch to this came with the same changes from the previous one, as we are now performing error handling for `open` that we weren't for `fopen` previously.
+
+```bash
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ ./secure_account 
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: a/b
+Age: 50
+[FATAL] Failure in opening users_a/b.txt
+```
+
 ## Fragile patch
 
 I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.
