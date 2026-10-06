@@ -10,7 +10,7 @@ void create_account() {
     char username[16];
     char filename[32];
     char age_buffer[5];
-    unsigned int age;
+    unsigned long int age;
 
     printf("Username: ");
     if (!fgets(username, 16, stdin)) {
@@ -78,7 +78,7 @@ void create_account() {
     }
 
     dprintf(fd, "Username: %s\n", username);
-    dprintf(fd, "Age: %u\n", age);
+    dprintf(fd, "Age: %lu\n", age);
 
     if (close(fd) == -1) {
         fprintf(stderr, "[FATAL] Could not close %s\n", filename);
@@ -90,16 +90,48 @@ void create_account() {
 }
 
 int main() {
-    int choice;
+    long int choice;
 
     printf("=== Account Manager ===\n");
     printf("1. Create account\n");
     printf("2. Exit\n");
     printf("Choice: ");
 
-    scanf("%d", &choice);
-    char c; // This is needed to consume the input in excess
-    while((c = getchar()) != '\n' && c != EOF);
+    char age_buffer[3];
+
+    if (!fgets(age_buffer, 3, stdin)) {
+        fprintf(stderr, "[FATAL] could not read choice\n");
+        return 1;
+    }
+    char* newline = strchr(age_buffer, '\n');
+    if (newline) {
+        *newline = '\0';
+    } else {
+        char c; // This is needed to consume the input in excess
+        while((c = getchar()) != '\n' && c != EOF);
+        fprintf(stderr, "[FATAL] choice too long, one digit is the maximum\n");
+        return 1;
+    }
+    char* endptr; // Will store the first invalid character as per strtoul(3)
+
+    errno = 0;
+    choice = strtol(age_buffer, &endptr, 10);
+    if (errno == ERANGE) {
+        fprintf(stderr, "[FATAL] this choice is out of range for an integer\n");
+        return 1;
+    } else if (endptr == age_buffer) {
+        fprintf(stderr, "[FATAL] no digit was read from your provided choice\n");
+        return 1;
+    } else if (*endptr && *endptr != '\n') {
+        // *endptr is neither end of string nor newline,
+        // so we didn't convert the *whole* input
+        fprintf(stderr, "[FATAL] only a prefix of your provided choice was valid digits\n");
+        return 1;
+    }
+    if (choice <= 0 || choice > 2) {
+        fprintf(stderr, "[FATAL] not a valid choice\n");
+        return 1;
+    }
 
     if (choice == 1) {
         create_account();
