@@ -472,14 +472,8 @@ index 35cd654..7e73a29 100644
 1. Create account
 2. Exit
 Choice: 1
-Username: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb
-Age: 40
-Account successfully created: users_aaaaaaaaaaaaaaa.txt
-```
-
-```
-Username: aaaaaaaaaaaaaaa
-Age: 40
+Username: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+[FATAL] username too long, 14 characters is the maximum
 ```
 
 I wanted to do something for the age too.
