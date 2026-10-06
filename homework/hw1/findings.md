@@ -44,6 +44,31 @@ What I suspect but has not been caught by the compiler is that `scanf` is used t
 
 # Part B
 
+1. Output below
+
+```bash
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ ./account
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: alice
+Age: 30
+Account successfully created: users_alice.txt
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ echo $?
+0
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ ./account_asan 
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: alice
+Age: 30
+Account successfully created: users_alice.txt
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ echo $?
+0
+```
+
 I like to use "AAAA", but when I can I use [cyclic](https://docs.pwntools.com/en/stable/util/cyclic.html) for easier identification of the buffer overflow.
 
 2. Output below
