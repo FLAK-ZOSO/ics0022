@@ -91,8 +91,14 @@ int create_account() {
         return 1;
     }
 
-    dprintf(fd, "Username: %s\n", username);
-    dprintf(fd, "Age: %lu\n", age);
+    if (dprintf(fd, "Username: %s\n", username) <= 0) {
+        fprintf(stderr, "[FATAL] Failure in formatting with username=%s\n", username);
+        return 1;
+    }
+    if (dprintf(fd, "Age: %lu\n", age) <= 0) {
+        fprintf(stderr, "[FATAL] Failure in formatting with age=%lu\n", age);
+        return 1;
+    }
 
     if (close(fd) == -1) {
         fprintf(stderr, "[FATAL] Could not close %s\n", filename);
