@@ -428,6 +428,60 @@ Age: 50
 [FATAL] Failure in opening users_a/b.txt
 ```
 
+### 3. Buffer overflow
+
+```diff
+diff --git a/homework/hw1/secure_account.c b/homework/hw1/secure_account.c
+index 35cd654..7e73a29 100644
+--- a/homework/hw1/secure_account.c
++++ b/homework/hw1/secure_account.c
+@@ -12,7 +12,19 @@ void create_account() {
+     unsigned int age;
+ 
+     printf("Username: ");
+-    scanf("%s", username);
++    if (!fgets(username, 16, stdin)) {
++        fprintf(stderr, "[FATAL] could not read username\n");
++        return;
++    }
++    char* newline = strchr(username, '\n');
++    if (newline) {
++        *newline = '\0';
++    } else {
++        char c; // This is needed to consume the input in excess
++        while((c = getchar()) != '\n' && c != EOF);
++        fprintf(stderr, "[FATAL] username too long, 14 characters is the maximum\n");
++        return;
++    }
+ 
+     printf("Age: ");
+     scanf("%u", &age);
+@@ -55,6 +67,8 @@ int main() {
+     printf("Choice: ");
+ 
+     scanf("%d", &choice);
++    char c; // This is needed to consume the input in excess
++    while((c = getchar()) != '\n' && c != EOF);
+ 
+     if (choice == 1) {
+         create_account();
+```
+
+```bash
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb
+Age: 40
+Account successfully created: users_aaaaaaaaaaaaaaa.txt
+```
+
+```
+Username: aaaaaaaaaaaaaaa
+Age: 40
+```
+
 ## Fragile patch
 
 I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.

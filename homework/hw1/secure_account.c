@@ -12,7 +12,19 @@ void create_account() {
     unsigned int age;
 
     printf("Username: ");
-    scanf("%s", username);
+    if (!fgets(username, 16, stdin)) {
+        fprintf(stderr, "[FATAL] could not read username\n");
+        return;
+    }
+    char* newline = strchr(username, '\n');
+    if (newline) {
+        *newline = '\0';
+    } else {
+        char c; // This is needed to consume the input in excess
+        while((c = getchar()) != '\n' && c != EOF);
+        fprintf(stderr, "[FATAL] username too long, 14 characters is the maximum\n");
+        return;
+    }
 
     printf("Age: ");
     scanf("%u", &age);
@@ -55,6 +67,8 @@ int main() {
     printf("Choice: ");
 
     scanf("%d", &choice);
+    char c; // This is needed to consume the input in excess
+    while((c = getchar()) != '\n' && c != EOF);
 
     if (choice == 1) {
         create_account();
