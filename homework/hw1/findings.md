@@ -195,10 +195,33 @@ Goodbye!
 
 I am ordering them roughly from the most to the least severe.
 
+## 1. NULL pointer dereference
+
+### Location
+
+program.c at line 20 (then again at lines 21 and 23)
+
+### Weakness class
+
+[CWE-476](https://cwe.mitre.org/data/definitions/476.html) NULL Pointer Dereference
+
+### Mechanism
+
+`fopen` tries to return a pointer to a `FILE` representing a stream, but when it fails it sets `file` to `NULL`. Then, `fprintf` tries to write to that stream but where the argument passed to it is `NULL`.
+
+### Evidence
+
+Experiment from Part A
+
+### Impact
+
+It often crashes the process but sometimes (some systems) it may also write to a memory address `0x0`, in which case the username would be written into valid memory (arbitrary code execution possibly, but probably one would get SIGILL just by "Username:" being copied first).
+
+### Remediation
+
+Validating and cleanly exiting on `NULL == file` before using the pointer.
 
 ## 2. Buffer overflow
-
-
 
 ### Location
 
@@ -223,7 +246,6 @@ User provided input can crash the program.
 ### Remediation
 
 As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%15s`).
-
 
 ## 5. Integer underflow
 
