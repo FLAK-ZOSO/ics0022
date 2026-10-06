@@ -72,7 +72,9 @@ void create_account() {
     // This still allows for underflows as the function interprets "-" signs correctly
     // but we don't really care for now
 
-    sprintf(filename, "users_%s.txt", username);
+    if (snprintf(filename, 32, "users_%s.txt", username) <= 0) {
+        fprintf(stderr, "[FATAL] something went wrong when formatting the filename\n");
+    }
 
     int fd = open(filename,
         O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW,

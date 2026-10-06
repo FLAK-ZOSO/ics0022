@@ -678,6 +678,12 @@ for (size_t i = 0; i < 16; i++) {
 }
 ```
 
+```c
+if (snprintf(filename, 32, "users_%s.txt", username) <= 0) {
+    fprintf(stderr, "[FATAL] something went wrong when formatting the filename\n");
+}
+```
+
 # AI declaration
 
 I asked GPT this question about the "unchecked integer value input" weakness.
