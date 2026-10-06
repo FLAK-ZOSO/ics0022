@@ -32,6 +32,11 @@ void create_account() {
         fprintf(stderr, "[FATAL] could not read age\n");
         return;
     }
+    char* sign = strchr(age_buffer, '-');
+    if (sign) {
+        fprintf(stderr, "[FATAL] age cannot be negative\n");
+        return;
+    }
     newline = strchr(age_buffer, '\n');
     if (newline) {
         *newline = '\0';

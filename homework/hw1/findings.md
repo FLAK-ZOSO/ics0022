@@ -632,6 +632,37 @@ Choice: 3
 [FATAL] not a valid choice
 ```
 
+### 5. Integer underflow
+
+```diff
+diff --git a/homework/hw1/secure_account.c b/homework/hw1/secure_account.c
+index ce0da20..1d97aaf 100644
+--- a/homework/hw1/secure_account.c
++++ b/homework/hw1/secure_account.c
+@@ -32,6 +32,11 @@ void create_account() {
+         fprintf(stderr, "[FATAL] could not read age\n");
+         return;
+     }
++    char* sign = strchr(age_buffer, '-');
++    if (sign) {
++        fprintf(stderr, "[FATAL] age cannot be negative\n");
++        return;
++    }
+     newline = strchr(age_buffer, '\n');
+     if (newline) {
+         *newline = '\0';
+```
+
+```
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: mattia
+Age: -30
+[FATAL] age cannot be negative
+```
+
 ## Fragile patch
 
 I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.
