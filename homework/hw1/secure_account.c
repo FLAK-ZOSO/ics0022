@@ -77,7 +77,7 @@ void create_account() {
     }
 
     int fd = open(filename,
-        O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW,
+        O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW,
         S_IRUSR | S_IWUSR
     );
 
