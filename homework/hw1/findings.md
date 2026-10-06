@@ -694,4 +694,4 @@ I asked GPT this question, that proved to be about scanf not consuming the newli
 
 > Fgets here appears nonblocking despite returning a non-null value, what could it be?
 
-
+I asked GPT to verify the checklist before submission.

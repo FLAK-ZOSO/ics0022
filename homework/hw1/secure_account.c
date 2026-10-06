@@ -29,6 +29,8 @@ int create_account() {
     }
     for (size_t i = 0; i < 16; i++) {
         if (!isalnum(username[i])) {
+            if (username[i] == '\0')
+                break;
             fprintf(stderr, "[FATAL] character %c in username is not alphanumeric\n", username[i]);
             return 1;
         }
@@ -74,6 +76,7 @@ int create_account() {
 
     if (snprintf(filename, 32, "users_%s.txt", username) <= 0) {
         fprintf(stderr, "[FATAL] something went wrong when formatting the filename\n");
+        return 1;
     }
 
     int fd = open(filename,
@@ -93,10 +96,20 @@ int create_account() {
 
     if (dprintf(fd, "Username: %s\n", username) <= 0) {
         fprintf(stderr, "[FATAL] Failure in formatting with username=%s\n", username);
+        if (close(fd) == -1) {
+            fprintf(stderr, "[FATAL] Could not close %s\n", filename);
+            // close(2): "close() should not be retried after an error."
+            return 1;
+        }
         return 1;
     }
     if (dprintf(fd, "Age: %lu\n", age) <= 0) {
         fprintf(stderr, "[FATAL] Failure in formatting with age=%lu\n", age);
+        if (close(fd) == -1) {
+            fprintf(stderr, "[FATAL] Could not close %s\n", filename);
+            // close(2): "close() should not be retried after an error."
+            return 1;
+        }
         return 1;
     }
 
