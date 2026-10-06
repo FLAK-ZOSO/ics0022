@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <ctype.h>
 
-void create_account() {
+int create_account() {
     char username[16];
     char filename[32];
     char age_buffer[5];
@@ -16,7 +16,7 @@ void create_account() {
     printf("Username: ");
     if (!fgets(username, 16, stdin)) {
         fprintf(stderr, "[FATAL] could not read username\n");
-        return;
+        return 1;
     }
     char* newline = strchr(username, '\n');
     if (newline) {
@@ -25,24 +25,24 @@ void create_account() {
         char c; // This is needed to consume the input in excess
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] username too long, 14 characters is the maximum\n");
-        return;
+        return 1;
     }
     for (size_t i = 0; i < 16; i++) {
         if (!isalnum(username[i])) {
             fprintf(stderr, "[FATAL] character %c in username is not alphanumeric\n", username[i]);
-            return;
+            return 1;
         }
     }
 
     printf("Age: ");
     if (!fgets(age_buffer, 5, stdin)) {
         fprintf(stderr, "[FATAL] could not read age\n");
-        return;
+        return 1;
     }
     char* sign = strchr(age_buffer, '-');
     if (sign) {
         fprintf(stderr, "[FATAL] age cannot be negative\n");
-        return;
+        return 1;
     }
     newline = strchr(age_buffer, '\n');
     if (newline) {
@@ -51,7 +51,7 @@ void create_account() {
         char c; // This is needed to consume the input in excess
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] age too long, 3 digits is the maximum\n");
-        return;
+        return 1;
     }
     char* endptr; // Will store the first invalid character as per strtoul(3)
 
@@ -59,15 +59,15 @@ void create_account() {
     age = strtoul(age_buffer, &endptr, 10);
     if (errno == ERANGE) {
         fprintf(stderr, "[FATAL] this age is out of range for unsigned long\n");
-        return;
+        return 1;
     } else if (endptr == age_buffer) {
         fprintf(stderr, "[FATAL] no digit was read from your provided age\n");
-        return;
+        return 1;
     } else if (*endptr && *endptr != '\n') {
         // *endptr is neither end of string nor newline,
         // so we didn't convert the *whole* input
         fprintf(stderr, "[FATAL] only a prefix of your provided age was valid digits\n");
-        return;
+        return 1;
     }
     // This still allows for underflows as the function interprets "-" signs correctly
     // but we don't really care for now
@@ -85,10 +85,10 @@ void create_account() {
         if (errno == ELOOP) {
             // Failure specifically due to O_NOFOLLOW
             fprintf(stderr, "[FATAL] %s existed already, and as a symlink\n", filename);
-            return;
+            return 1;
         }
         fprintf(stderr, "[FATAL] Failure in opening %s\n", filename);
-        return;
+        return 1;
     }
 
     dprintf(fd, "Username: %s\n", username);
@@ -97,10 +97,11 @@ void create_account() {
     if (close(fd) == -1) {
         fprintf(stderr, "[FATAL] Could not close %s\n", filename);
         // close(2): "close() should not be retried after an error."
-        return;
+        return 1;
     }
 
     printf("Account successfully created: %s\n", filename);
+    return 0;
 }
 
 int main() {
@@ -148,7 +149,7 @@ int main() {
     }
 
     if (choice == 1) {
-        create_account();
+        return create_account();
     } else {
         printf("Goodbye!\n");
     }
