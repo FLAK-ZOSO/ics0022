@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <ctype.h>
 
 void create_account() {
     char username[16];
@@ -25,6 +26,12 @@ void create_account() {
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] username too long, 14 characters is the maximum\n");
         return;
+    }
+    for (size_t i = 0; i < 16; i++) {
+        if (!isalnum(username[i])) {
+            fprintf(stderr, "[FATAL] character %c in username is not alphanumeric\n", username[i]);
+            return;
+        }
     }
 
     printf("Age: ");

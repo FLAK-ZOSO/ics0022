@@ -667,6 +667,17 @@ Age: -30
 
 I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.
 
+## Other fixes
+
+```c
+for (size_t i = 0; i < 16; i++) {
+    if (!isalnum(username[i])) {
+        fprintf(stderr, "[FATAL] character %c in username is not alphanumeric\n", username[i]);
+        return;
+    }
+}
+```
+
 # AI declaration
 
 I asked GPT this question about the "unchecked integer value input" weakness.
