@@ -672,3 +672,9 @@ I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the P
 I asked GPT this question about the "unchecked integer value input" weakness.
 
 > What is the CWE here? Cannot quite track it.
+
+I asked GPT this question, that proved to be about scanf not consuming the newline.
+
+> Fgets here appears nonblocking despite returning a non-null value, what could it be?
+
+
