@@ -22,7 +22,7 @@ int create_account() {
     if (newline) {
         *newline = '\0';
     } else {
-        char c; // This is needed to consume the input in excess
+        int c; // This is needed to consume the input in excess
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] username too long, 14 characters is the maximum\n");
         return 1;
@@ -48,7 +48,7 @@ int create_account() {
     if (newline) {
         *newline = '\0';
     } else {
-        char c; // This is needed to consume the input in excess
+        int c; // This is needed to consume the input in excess
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] age too long, 3 digits is the maximum\n");
         return 1;
@@ -128,7 +128,7 @@ int main() {
     if (newline) {
         *newline = '\0';
     } else {
-        char c; // This is needed to consume the input in excess
+        int c; // This is needed to consume the input in excess
         while((c = getchar()) != '\n' && c != EOF);
         fprintf(stderr, "[FATAL] choice too long, one digit is the maximum\n");
         return 1;
