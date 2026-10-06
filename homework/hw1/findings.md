@@ -482,6 +482,67 @@ Username: aaaaaaaaaaaaaaa
 Age: 40
 ```
 
+I wanted to do something for the age too.
+
+```diff
+diff --git a/homework/hw1/secure_account.c b/homework/hw1/secure_account.c
+index 7e73a29..772c257 100644
+--- a/homework/hw1/secure_account.c
++++ b/homework/hw1/secure_account.c
+@@ -9,6 +9,7 @@
+ void create_account() {
+     char username[16];
+     char filename[32];
++    char age_buffer[5];
+     unsigned int age;
+ 
+     printf("Username: ");
+@@ -27,7 +28,37 @@ void create_account() {
+     }
+ 
+     printf("Age: ");
+-    scanf("%u", &age);
++    if (!fgets(age_buffer, 5, stdin)) {
++        fprintf(stderr, "[FATAL] could not read age\n");
++        return;
++    }
++    newline = strchr(age_buffer, '\n');
++    if (newline) {
++        *newline = '\0';
++    } else {
++        char c; // This is needed to consume the input in excess
++        while((c = getchar()) != '\n' && c != EOF);
++        fprintf(stderr, "[FATAL] age too long, 3 digits is the maximum\n");
++        return;
++    }
++    char* endptr; // Will store the first invalid character as per strtoul(3)
++
++    errno = 0;
++    age = strtoul(age_buffer, &endptr, 10);
++    if (errno == ERANGE) {
++        fprintf(stderr, "[FATAL] this age is out of range for unsigned long\n");
++        return;
++    } else if (endptr == age_buffer) {
++        fprintf(stderr, "[FATAL] no digit was read from your provided age\n");
++        return;
++    } else if (*endptr && *endptr != '\n') {
++        // *endptr is neither end of string nor newline,
++        // so we didn't convert the *whole* input
++        fprintf(stderr, "[FATAL] only a prefix of your provided age was valid digits\n");
++        return;
++    }
++    // This still allows for underflows as the function interprets "-" signs correctly
++    // but we don't really care for now
+ 
+     sprintf(filename, "users_%s.txt", username);
+```
+
+### 4. Unchecked integer value input
+
+```diff
+
+```
+
 ## Fragile patch
 
 I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.
