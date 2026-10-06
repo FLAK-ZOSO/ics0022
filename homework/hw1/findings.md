@@ -177,7 +177,7 @@ Age: 4294967295
 Age: 0
 ```
 
-It was the same each time, but I am guessing it could vary as this is probably UB. It is reading an unsigned integer.
+It was the same each time, but it could vary because the value of an uninitialized integer variable is undefined.
 
 6. Output below
 
@@ -211,7 +211,7 @@ program.c at line 20 (then again at lines 21 and 23)
 
 ### Evidence
 
-Experiment from Part A
+Experiment from Part A, plus experiment 3 from Part B
 
 ### Impact
 
@@ -246,6 +246,32 @@ User provided input can crash the program.
 ### Remediation
 
 As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%15s`).
+
+### 4. Unchecked integer value input
+
+### Location
+
+program.c at line 36
+
+### Weakness class
+
+[CWE-252](https://cwe.mitre.org/data/definitions/252.html) Unchecked Return Value
+
+### Mechanism
+
+`scanf` is called to read `choice` as an integer, but the return code is not checked and thus the variable could be uninitialized when input such as "abc" is provided and no integer can be scanned.
+
+### Evidence
+
+Experiment 6 from Part B
+
+### Impact
+
+A conditional jump at line 38 is based on a possibly uninitialized value, an undefined behaviour that in this case reaches the user.
+
+### Remediation
+
+As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer and then `stoi` plus range validation, or `strtol` and read pointers validation and range validation on top.
 
 ## 5. Integer underflow
 
