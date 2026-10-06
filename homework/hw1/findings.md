@@ -344,6 +344,79 @@ A user prefixing with a dash their own age will have an implausibly large age.
 
 As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer and then the appropriate one from the `ato*` family of functions.
 
+# Part D
+
+## Patches
+
+### 1. Symlink issue
+
+```diff
+diff --git a/homework/hw1/secure_account.c b/homework/hw1/secure_account.c
+index fb32812..384d89f 100644
+--- a/homework/hw1/secure_account.c
++++ b/homework/hw1/secure_account.c
+@@ -1,6 +1,10 @@
++// gcc -Wall -Wextra -g secure_account.c -o secure_account 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <unistd.h>
+ 
+ void create_account() {
+     char username[16];
+@@ -15,12 +19,29 @@ void create_account() {
+ 
+     sprintf(filename, "users_%s.txt", username);
+ 
+-    FILE *file = fopen(filename, "w");
++    int fd = open(filename,
++        O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW,
++        S_IRUSR | S_IWUSR
++    );
+ 
+-    fprintf(file, "Username: %s\n", username);
+-    fprintf(file, "Age: %u\n", age);
++    if (fd == -1) {
++        if (errno == ELOOP) {
++            // Failure specifically due to O_NOFOLLOW
++            fprintf(stderr, "[FATAL] %s existed already, and as a symlink\n", filename);
++            return;
++        }
++        fprintf(stderr, "[FATAL] Failure in opening %s\n", filename);
++        return;
++    }
++
++    dprintf(fd, "Username: %s\n", username);
++    dprintf(fd, "Age: %u\n", age);
+ 
+-    fclose(file);
++    if (close(fd) == -1) {
++        fprintf(stderr, "[FATAL] Could not close %s\n", filename);
++        // close(2): "close() should not be retried after an error."
++        return;
++    }
+ 
+     printf("Account successfully created: %s\n", filename);
+ }
+```
+
+```bash
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ ./secure_account 
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: innocent-file
+Age: 40
+[FATAL] users_innocent-file.txt existed already, and as a symlink
+```
+
+## Fragile patch
+
+I believe the `O_NOFOLLOW` patch to be the most fragile: it is required by the POSIX.1 standard only since the 2008 version, and someone wanting to port this program to an older platform could delete this option for backwards compatibility.
+
 # AI declaration
 
 I asked GPT this question about the "unchecked integer value input" weakness.

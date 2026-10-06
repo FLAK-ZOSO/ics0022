@@ -1,6 +1,10 @@
+// gcc -Wall -Wextra -g secure_account.c -o secure_account
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 
 void create_account() {
     char username[16];
@@ -15,12 +19,29 @@ void create_account() {
 
     sprintf(filename, "users_%s.txt", username);
 
-    FILE *file = fopen(filename, "w");
+    int fd = open(filename,
+        O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW,
+        S_IRUSR | S_IWUSR
+    );
 
-    fprintf(file, "Username: %s\n", username);
-    fprintf(file, "Age: %u\n", age);
+    if (fd == -1) {
+        if (errno == ELOOP) {
+            // Failure specifically due to O_NOFOLLOW
+            fprintf(stderr, "[FATAL] %s existed already, and as a symlink\n", filename);
+            return;
+        }
+        fprintf(stderr, "[FATAL] Failure in opening %s\n", filename);
+        return;
+    }
 
-    fclose(file);
+    dprintf(fd, "Username: %s\n", username);
+    dprintf(fd, "Age: %u\n", age);
+
+    if (close(fd) == -1) {
+        fprintf(stderr, "[FATAL] Could not close %s\n", filename);
+        // close(2): "close() should not be retried after an error."
+        return;
+    }
 
     printf("Account successfully created: %s\n", filename);
 }
