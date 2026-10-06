@@ -195,7 +195,52 @@ Goodbye!
 
 I am ordering them roughly from the most to the least severe.
 
-## 1. NULL pointer dereference
+## 1. Following symbolic link
+
+### Location
+
+program.c at line 18
+
+### Weakness class
+
+[CWE-61](https://cwe.mitre.org/data/definitions/61.html) UNIX Symbolic Link (Symlink) Following
+
+### Mechanism
+
+The `fopen` call can follow a symlink and writes to the file to which the link results instead.
+
+### Evidence
+
+Additional test here.
+
+```bash
+touch /tmp/sensitive-configuration-file
+ln -s /tmp/sensitive-configuration-file users_innocent-file.txt
+```
+
+```bash
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ ./account
+=== Account Manager ===
+1. Create account
+2. Exit
+Choice: 1
+Username: innocent-file
+Age: 30
+Account successfully created: users_innocent-file.txt
+flak-zoso@fedora:~/Repositories/ics0022/homework/hw1$ cat /tmp/sensitive-configuration-file 
+Username: innocent-file
+Age: 30
+```
+
+### Impact
+
+A file accessible by the program but not by the user (e.g. if running with the setuid bit) could be overwritten fatally for the system (e.g. `/etc/shadow`).
+
+### Remediation
+
+Using appropriate flags (i.e. `O_NOFOLLOW` in `open`) to prevent following the symlink. An alternative solution is using an equivalent to `O_EXCL` that fixes both the file overwriting issue and the link following one.
+
+## 2. NULL pointer dereference
 
 ### Location
 
@@ -221,7 +266,7 @@ It often crashes the process but sometimes (some systems) it may also write to a
 
 Validating and cleanly exiting on `NULL == file` before using the pointer.
 
-## 2. Buffer overflow
+## 3. Buffer overflow
 
 ### Location
 
@@ -247,7 +292,7 @@ User provided input can crash the program.
 
 As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer, or even just use scanf but specifying the amount of characters in the string (e.g. `%15s`).
 
-### 4. Unchecked integer value input
+## 4. Unchecked integer value input
 
 ### Location
 
@@ -298,3 +343,9 @@ A user prefixing with a dash their own age will have an implausibly large age.
 ### Remediation
 
 As per the [Beginner's Guide away from scanf](https://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html), I would use `fgets` on a buffer and then the appropriate one from the `ato*` family of functions.
+
+# AI declaration
+
+I asked GPT this question about the "unchecked integer value input" weakness.
+
+> What is the CWE here? Cannot quite track it.
