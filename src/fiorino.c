@@ -401,15 +401,26 @@ static FILE* open_input_file(const char* path) {
     return input;
 }
 
-static void write_output_file(FILE* output, const unsigned char* data,
+static int write_output_file(FILE* output, const unsigned char* data,
                               size_t length) {
+    int failed = 0;
     if (fwrite(data, 1, length, output) != length) {
         fiorino_log_message(FIORINO_LOG_ERROR, "could not write complete output");
+        failed = 1;
     }
-    if (flock(fileno(output), LOCK_UN) == -1)
+    if (fflush(output) == EOF) {
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not flush", "output stream");
+        failed = 1;
+    }
+    if (flock(fileno(output), LOCK_UN) == -1) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not unlock", "output stream");
-    if (fclose(output) == EOF)
+        failed = 1;
+    }
+    if (fclose(output) == EOF) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not close", "output stream");
+        failed = 1;
+    }
+    return failed ? -1 : 0;
 }
 
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
@@ -501,7 +512,9 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
 
-    write_output_file(file_enc, serialized, serialized_len);
+    if (write_output_file(file_enc, serialized, serialized_len) == -1) {
+        goto cleanup_encrypt;
+    }
 
     if (rename(fullpath_tmp, fullpath) == -1) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not replace encrypted file", fullpath);
@@ -606,7 +619,9 @@ int fiorino_decrypt(struct Vault* vault, char* file) {
 
     FILE* exported = open_output_file_to_user(file);
     if (exported == NULL) goto cleanup_decrypt;
-    write_output_file(exported, plaintext, (size_t)decryptrc);
+    if (write_output_file(exported, plaintext, (size_t)decryptrc) == -1) {
+        goto cleanup_decrypt;
+    }
 
     result = 0;
 
