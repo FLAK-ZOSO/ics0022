@@ -28,6 +28,23 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    printf("vault:%s, filename:%s\n", vault, filename);
+    char passphrase[100] = {0};
+    if (fiorino_read_password(passphrase, sizeof passphrase, 0) < 0) {
+        fprintf(stderr, "Could not read password, aborting.\n");
+        return EXIT_FAILURE;
+    }
+
+    struct Vault vault_ = {
+        geteuid(),
+        vault,
+        passphrase
+    };
+
+    if (fiorino_decrypt(&vault_, filename)) {
+        fprintf(stderr, "Decryption failed, aborting.\n");
+        return EXIT_FAILURE;
+    }
+
+    puts("Your file has been decrypted successfully");
     return EXIT_SUCCESS;
 }

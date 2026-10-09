@@ -551,7 +551,7 @@ cleanup_encrypt:
     return result;
 }
 
-int fiorino_decrypt(struct Vault* vault, char* file) {
+int fiorino_decrypt(struct Vault* vault, const char* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     char* fullpath = runtime_setup_file(vault, file);

@@ -11,7 +11,7 @@
 /** \brief Information needed to access a vault */
 struct Vault {
     uid_t user; ///< claimed username
-    char* vault; ///< selected vault
+    const char* vault; ///< selected vault
     char* passphrase; ///< attempted passphrase
 };
 
@@ -33,7 +33,7 @@ struct FileToEncrypt {
  * \retval 0 success
  * \retval 1 failure
  */
-int fiorino_decrypt(struct Vault* vault, char* file);
+int fiorino_decrypt(struct Vault* vault, const char* file);
 
 /** \brief Encrypts a file to a vault
  * \param vault The information of the vault to encrypt to
