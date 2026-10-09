@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 int main(void) {
@@ -60,6 +61,25 @@ int main(void) {
     assert(snprintf(path, sizeof path, "%s/.fiorino/test/write-failure.enc.tmp",
                     home) > 0);
     assert(unlink(path) == 0);
+
+    source = tmpfile();
+    assert(source != NULL);
+    assert(fwrite(message, 1, sizeof message, source) == sizeof message);
+    assert(fflush(source) == 0);
+    file.file = source;
+    file.name = "rename-failure";
+    assert(snprintf(path, sizeof path, "%s/.fiorino/test/rename-failure.enc",
+                    home) > 0);
+    assert(mkdir(path, FIORINO_VAULT_DIR_PERM) == 0);
+    assert(fiorino_encrypt_stream(&vault, &file) != 0);
+    assert(fclose(source) == 0);
+    assert(access(path, F_OK) == 0);
+    assert(snprintf(path, sizeof path,
+                    "%s/.fiorino/test/rename-failure.enc.tmp", home) > 0);
+    assert(access(path, F_OK) == -1);
+    assert(snprintf(path, sizeof path, "%s/.fiorino/test/rename-failure.enc",
+                    home) > 0);
+    assert(rmdir(path) == 0);
 
     assert(snprintf(path, sizeof path, "%s/.fiorino/test/sample.enc",
                     home) > 0);
