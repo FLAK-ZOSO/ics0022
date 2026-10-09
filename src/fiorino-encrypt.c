@@ -6,7 +6,7 @@
 int main(int argc, char** argv) {
     int opt;
     const char* vault = "default";
-    const char* filename = NULL;
+    char* filename = NULL;
     while ((opt = getopt(argc, argv, "v:f:")) != -1) {
         switch (opt) {
             case 'v': {
