@@ -550,7 +550,9 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
 
     if (rename(fullpath_tmp, fullpath) == -1) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not replace encrypted file", fullpath);
-        /// \todo cleanup
+        if (remove(fullpath_tmp) == -1) {
+            fiorino_log_errno(FIORINO_LOG_ERROR, "could not delete temporary", fullpath_tmp);
+        }
         goto cleanup_encrypt;
     }
 
