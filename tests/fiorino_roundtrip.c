@@ -47,7 +47,7 @@ static void encrypt_named(struct Vault* vault, const char* name,
     assert(source != NULL);
     if (length != 0) assert(fwrite(data, 1, length, source) == length);
     struct FileToEncrypt file = { .file = source, .name = (char*)name };
-    assert(fiorino_encrypt(vault, &file) == 0);
+    assert(fiorino_encrypt_stream(vault, &file) == 0);
     assert(fclose(source) == 0);
 }
 
@@ -122,7 +122,7 @@ int main(void) {
     struct FileToEncrypt traversal = {
         .file = traversal_source, .name = "../../outside"
     };
-    assert(fiorino_encrypt(&vault, &traversal) != 0);
+    assert(fiorino_encrypt_stream(&vault, &traversal) != 0);
     assert(fclose(traversal_source) == 0);
     assert_file_equals("outside.enc", outside_sentinel, sizeof outside_sentinel);
 
@@ -134,7 +134,7 @@ int main(void) {
     struct FileToEncrypt vault_escape = {
         .file = vault_source, .name = "outside"
     };
-    assert(fiorino_encrypt(&escaped_vault, &vault_escape) != 0);
+    assert(fiorino_encrypt_stream(&escaped_vault, &vault_escape) != 0);
     assert(fclose(vault_source) == 0);
     assert_file_equals("outside.enc", outside_sentinel, sizeof outside_sentinel);
 

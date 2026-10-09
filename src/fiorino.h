@@ -49,7 +49,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \retval 1 other failure
  * \retval 2 OpenSSL failure
  */
-int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file);
+int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file);
 
 /** \brief Read a passphrase without echoing it on the terminal.
  * \param buffer Destination buffer, including space for the terminating NUL

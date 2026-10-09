@@ -22,7 +22,7 @@ int main(void) {
     struct Vault vault = { .user = geteuid(), .vault = "test",
                            .passphrase = "password" };
     struct FileToEncrypt input = { .file = source, .name = "report" };
-    assert(fiorino_encrypt(&vault, &input) == 0);
+    assert(fiorino_encrypt_stream(&vault, &input) == 0);
     assert(fclose(source) == 0);
 
     const unsigned char sentinel[] = "private file must not change";
@@ -48,7 +48,7 @@ int main(void) {
     assert(source != NULL);
     assert(fwrite(secret, 1, sizeof secret, source) == sizeof secret);
     struct FileToEncrypt blocked = { .file = source, .name = "blocked" };
-    assert(fiorino_encrypt(&vault, &blocked) != 0);
+    assert(fiorino_encrypt_stream(&vault, &blocked) != 0);
     assert(fclose(source) == 0);
     target = fopen("private.txt", "rb");
     assert(target != NULL);
@@ -63,7 +63,7 @@ int main(void) {
     source = tmpfile();
     assert(source != NULL);
     assert(fwrite(secret, 1, sizeof secret, source) == sizeof secret);
-    assert(fiorino_encrypt(&vault, &(struct FileToEncrypt){
+    assert(fiorino_encrypt_stream(&vault, &(struct FileToEncrypt){
         .file = source, .name = "blocked" }) == 0);
     assert(fclose(source) == 0);
     assert(access(".fiorino/test/blocked.enc", F_OK) == 0);

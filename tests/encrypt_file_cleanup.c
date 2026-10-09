@@ -21,7 +21,7 @@ int main(void) {
     struct Vault vault = { .user = geteuid(), .vault = "test",
                            .passphrase = "secret" };
     struct FileToEncrypt file = { .file = source, .name = "sample" };
-    assert(fiorino_encrypt(&vault, &file) == 0);
+    assert(fiorino_encrypt_stream(&vault, &file) == 0);
     assert(fclose(source) == 0);
 
     char path[256];
@@ -50,7 +50,7 @@ int main(void) {
     void (*old_handler)(int) = signal(SIGXFSZ, SIG_IGN);
     assert(old_handler != SIG_ERR);
     assert(setrlimit(RLIMIT_FSIZE, &no_writes) == 0);
-    assert(fiorino_encrypt(&vault, &file) != 0);
+    assert(fiorino_encrypt_stream(&vault, &file) != 0);
     assert(setrlimit(RLIMIT_FSIZE, &original_limit) == 0);
     assert(signal(SIGXFSZ, old_handler) != SIG_ERR);
     assert(fclose(source) == 0);

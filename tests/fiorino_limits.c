@@ -32,7 +32,7 @@ int main(void) {
     struct Vault long_vault = vault;
     long_vault.vault = long_vault_name;
     struct FileToEncrypt file = { .file = input, .name = "sample" };
-    assert(fiorino_encrypt(&long_vault, &file) != 0);
+    assert(fiorino_encrypt_stream(&long_vault, &file) != 0);
     assert(fiorino_decrypt(&long_vault, "sample") != 0);
     free(long_vault_name);
 
@@ -41,13 +41,13 @@ int main(void) {
     memset(long_output_name, 'n', PATH_MAX);
     long_output_name[PATH_MAX] = '\0';
     file.name = long_output_name;
-    assert(fiorino_encrypt(&vault, &file) != 0);
+    assert(fiorino_encrypt_stream(&vault, &file) != 0);
     assert(fiorino_decrypt(&vault, long_output_name) != 0);
 
     /* The open input's size limit must reject a sparse oversized file. */
     assert(ftruncate(fileno(input), FIORINO_MAX_FILE_SIZE + 1) == 0);
     file.name = "oversized";
-    assert(fiorino_encrypt(&vault, &file) != 0);
+    assert(fiorino_encrypt_stream(&vault, &file) != 0);
     assert(access(".fiorino/test/oversized.enc", F_OK) == -1);
 
     assert(fclose(input) == 0);

@@ -435,7 +435,7 @@ static int write_output_file(FILE* output, const unsigned char* data,
     return failed ? -1 : 0;
 }
 
-int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file) {
+int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     if (runtime_setup_output_name(file->name)) return 1;
