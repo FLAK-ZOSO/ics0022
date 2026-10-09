@@ -57,6 +57,8 @@ Test dependencies:
 The CLI pseudo-terminal test also links against `libutil`, provided by
 `glibc-devel` on Fedora and normally by `libc6-dev` on Debian.
 
+### CLI only
+
 ```bash
 make
 make cli
@@ -65,7 +67,7 @@ make cli
 Encrypt a file into a vault. The password is entered twice:
 
 ```bash
-./build/fiorino-encrypt -v default -f ./file.txt
+./build/fiorino-encrypt -v default -f file.txt
 ```
 
 Decrypt a vault file into the current directory. The password is entered once:
@@ -79,3 +81,8 @@ Run the test suite with:
 ```bash
 make test
 ```
+
+### Full installation
+
+> [!WARNING]
+> GNU Make targets for installation are not available yet, and some twists to rpaths and include directories will be needed by then.
