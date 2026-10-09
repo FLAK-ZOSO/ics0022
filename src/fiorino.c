@@ -30,6 +30,10 @@ int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
     return UI_UTIL_read_pw_string(buffer, (int)buffer_size, "Password: ", verify != 0);
 }
 
+void fiorino_cleanse(void* buffer, size_t size) {
+    OPENSSL_cleanse(buffer, size);
+}
+
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
  */

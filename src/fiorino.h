@@ -59,4 +59,6 @@ int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file);
  */
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify);
 
+void fiorino_cleanse(void* buffer, size_t size);
+
 /** \todo see functionality declared in the user interface */
