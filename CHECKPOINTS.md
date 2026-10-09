@@ -1,16 +1,25 @@
-## Checkpoint 1 - Threat model and architecture (Week 4) - File Manager
+# Progress note
 
-Deliverables. A short design document plus an initialised repository. 
+- Checkpoint 1: complete.
+- Encryption library: implemented and tested with AES-256-GCM.
+- Decryption library: implemented and tested.
+- Bundle serialization: implemented and tested.
+- Password prompting: wrapped by Fiorino’s API.
+- Stream-based encryption API: named fiorino_encrypt_stream.
+- Path and symlink validation: implemented and tested.
+- Logging: implemented.
+- CLI: in progress; encrypt and decrypt commands are partially implemented.
 
-- System architecture diagram showing the components, the data flow, where files 
-and keys live, and the trust boundaries. 
+## Before checkpoint 2
+- finish CLI
+- add CLI round-trip test (both valid and invalid input)
+- document clean build and usage in the README
 
-- Threat model of the tool, covering at minimum the file handling, the authentication 
-step, and the key and password handling. List each threat with its intended 
-mitigation. 
-
-- Chosen implementation language and proposed libraries, with a short justification, 
-for example OpenSSL for C or cryptography and PyCryptodome for Python. 
-
-- Repository initialised with a README stating the project scope, the planned 
-command-line commands, and how to build and run it. 
+## Todo
+- secure deletion
+- signal handling
+- file/stream size/read limits
+- complete access-control review
+- atomic replacement
+- final validation tests
+- report
