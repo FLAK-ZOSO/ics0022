@@ -22,6 +22,9 @@
                                     + FIORINO_IV_SIZE \
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
+#define FIORINO_AUTH_FILENAME ".auth"
+#define FIORINO_AUTH_SALT_SIZE 16
+#define FIORINO_AUTH_SIZE (FIORINO_AUTH_SALT_SIZE + FIORINO_KEY_SIZE)
 
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
     if (buffer == NULL || buffer_size == 0 || buffer_size > INT_MAX)
@@ -147,8 +150,33 @@ int vault_directory_exists(struct Vault* vault) {
             return 1;
         }
     }
+    
+    bool auth_failed = 0;
+    char auth_path[PATH_MAX];
+    size_t auth_path_size = snprintf(auth_path, sizeof auth_path, "%s/%s",
+                                     vaultpath, FIORINO_AUTH_FILENAME);
     free(vaultpath);
-    return 0;
+    if (auth_path_size < vaultpath_alloc + sizeof FIORINO_AUTH_FILENAME) {
+        fiorino_log_message(FIORINO_LOG_ERROR, "the auth path was not fully written");
+        auth_failed = 1;
+    } else if (auth_path_size > PATH_MAX) {
+        fiorino_log_message(FIORINO_LOG_ERROR, "the auth path is too long");
+        auth_failed = 1;
+    } else {
+        int authfd = open(auth_path, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC |
+                          O_NOFOLLOW, FIORINO_VAULT_PERM);
+        if (authfd == -1) {
+            fiorino_log_message(FIORINO_LOG_ERROR,
+                                "could not create vault authentication record");
+        } else {
+            unsigned char record[FIORINO_AUTH_SIZE];
+            unsigned char derived[FIORINO_KEY_SIZE];
+            /// \todo implement
+        }
+    }
+
+    free(vaultpath);
+    return auth_failed;
 }
 
 /** \brief Idempotently creates a vault directory with correct permissions
