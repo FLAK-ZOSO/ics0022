@@ -1,0 +1,4 @@
+| A1. What does signed versus unsigned mean, and what ranges can `uint8_t` and `int8_t` represent? | 4-5, 13-16 |
+| A2. Given `uint32_t x = UINT32_MAX; x += 1;`, what value is stored in x, and why? | 8-10 |
+| A3. Given `uint32_t x = 0; x -= 1;`, what value is stored in x? Can it become -1? | 8-11, 36 |
+| A4. Given `int x = INT_MAX; x += 1;`, can we predict a guaranteed value for x in C? | 17-19, 35 |

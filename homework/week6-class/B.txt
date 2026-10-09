@@ -1,0 +1,4 @@
+| B1. Given `uint32_t n = (uint32_t)-1;`, what value is stored in n? Does the cast reject the negative value? | 20, 29-31 |
+| B2. Given `uint16_t n = (uint16_t)70000;`, what value is stored in n, and is 70000 preserved? | 20, 33-34, 45-47 |
+| B3. Given `int a = -1; unsigned int b = 1;`, does `a < b` evaluate to true or false? Explain the role of the types. | 23-25, 29-31 |
+| B4. Given `uint8_t x = 250; int y = x + 10; uint8_t z = x + 10;`, what are y and z, and at which stage do their values differ? | 20-25, 33 |

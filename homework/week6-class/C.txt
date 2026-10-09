@@ -1,0 +1,4 @@
+| C1. Given `uint32_t a = 65536, b = 65536; uint64_t result = a * b;`, what value is stored in result? Does the wider destination make the multiplication safe? | 20-25, 33, 37 |
+| C2. Let a and b be arbitrary initialized uint32_t values. How can we check that their sum fits in uint32_t without first calculating `a + b`? | 10, 35 |
+| C3. Given `int values[5]; int index = -1; if (index < 5) values[index] = 42;`, is the array access valid? What check is missing? | 48-50 |
+| C4. A program accepts integer inputs from 10 through 100, inclusive. Which ordinary, exact-boundary, and just-outside-boundary values would you test, and which should be accepted? | 10, 20, 48-50 |
