@@ -5,9 +5,9 @@
 
 int main(int argc, char** argv) {
     int opt;
-    char* vault = "default";
-    char* filename;
-    while ((opt = getopt(argc, argv, "vf")) != -1) {
+    const char* vault = "default";
+    const char* filename = NULL;
+    while ((opt = getopt(argc, argv, "v:f:")) != -1) {
         switch (opt) {
             case 'v': {
                 vault = optarg;
@@ -19,10 +19,15 @@ int main(int argc, char** argv) {
             }
             default: {
                 fprintf(stderr, "Usage: %s -f <file> [-v <vault>]\n", argv[0]);
-                exit(EXIT_FAILURE);
+                return EXIT_FAILURE;
             }
         }
     }
-    printf("vault:%s, filename:%s", vault, filename);
-    exit(EXIT_SUCCESS);
+    if (filename == NULL) {
+        fprintf(stderr, "Filename must be specified, use -f to do so.\n");
+        return EXIT_FAILURE;
+    }
+
+    printf("vault:%s, filename:%s\n", vault, filename);
+    return EXIT_SUCCESS;
 }
