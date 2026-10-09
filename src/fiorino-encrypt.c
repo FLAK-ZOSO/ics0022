@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
 
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
+        fiorino_cleanse(passphrase, sizeof passphrase);
         fprintf(stderr, "Opening the input stream failed, aborting.\n");
         return EXIT_FAILURE;
     }
