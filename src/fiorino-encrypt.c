@@ -1,4 +1,5 @@
 #include <fiorino.h>
+#include <fiorino_log.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
     }
 
     char passphrase[100] = {0};
+    fiorino_log_set_threshold(FIORINO_LOG_INFO);
     if (fiorino_read_password(passphrase, sizeof passphrase, 1) < 0) {
         fprintf(stderr, "Could not read password, aborting.\n");
         return EXIT_FAILURE;
