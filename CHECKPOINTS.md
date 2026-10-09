@@ -16,6 +16,17 @@
 - document clean build and usage in the README
 
 ## Todo
+
+### Claimed by the clanker and not yet verified
+
+- encryption and decryption are separate binaries;
+- successful execution requires an interactive terminal password;
+- there is no shared command dispatcher;
+  - what the clanker means to say is `fiorino encrypt` rather than `fiorino-encrypt`
+- the encrypt CLI still has unfinished error paths;
+
+### Obvious
+
 - secure deletion
 - signal handling
 - file/stream size/read limits
@@ -23,3 +34,8 @@
 - atomic replacement
 - final validation tests
 - report
+
+### Extras
+
+- SELinux policy
+- man pages
