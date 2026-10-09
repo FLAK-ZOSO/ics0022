@@ -1,15 +1,15 @@
-SANFLAGS=-fsanitize=undefined
+SANFLAGS=-fsanitize=address,undefined
 ASMFLAGS=-S -fverbose-asm
 DBGFLAGS=-g
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
-	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP
+	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS)
 VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
 			build/test_fiorino_limits build/test_fiorino_roundtrip \
 			build/test_fiorino_symlink build/test_fiorino_log
-# CC=cc
-CC=/opt/fil/bin/filcc
+CC=cc
+# CC=/opt/fil/bin/filcc
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/fiorino.so
