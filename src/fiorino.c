@@ -424,7 +424,13 @@ static FILE* open_input_file(const char* path) {
     return input;
 }
 
-static int write_output_file(FILE* output, const unsigned char* data,
+/**
+ * \note It closes the output stream before returning
+ * \return status code
+ * \retval 0 success
+ * \retval -1 failure
+ */
+static int write_close_output_file(FILE* output, const unsigned char* data,
                               size_t length) {
     int failed = 0;
     if (fwrite(data, 1, length, output) != length) {
@@ -538,7 +544,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
 
-    if (write_output_file(file_enc, serialized, serialized_len) == -1) {
+    if (write_close_output_file(file_enc, serialized, serialized_len) == -1) {
         goto cleanup_encrypt;
     }
 
@@ -651,7 +657,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file) {
 
     FILE* exported = open_output_file_to_user(file);
     if (exported == NULL) goto cleanup_decrypt;
-    if (write_output_file(exported, plaintext, (size_t)decryptrc) == -1) {
+    if (write_close_output_file(exported, plaintext, (size_t)decryptrc) == -1) {
         goto cleanup_decrypt;
     }
 
