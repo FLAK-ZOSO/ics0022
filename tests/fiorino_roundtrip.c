@@ -37,7 +37,8 @@ static void assert_file_equals(const char* path, const unsigned char* expected,
     size_t actual_len;
     unsigned char* actual = read_bytes(path, &actual_len);
     assert(actual_len == expected_len);
-    assert(memcmp(actual, expected, expected_len) == 0);
+    if (expected_len != 0)
+        assert(memcmp(actual, expected, expected_len) == 0);
     free(actual);
 }
 
