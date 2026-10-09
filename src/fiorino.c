@@ -128,7 +128,7 @@ int vault_directory_exists(struct Vault* vault) {
     sprintf(vaultpath, "%s/%s",
             vault_root_path.we_wordv[0], vault->vault);
     wordfree(&vault_root_path);
-    
+
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
     if (stat(vaultpath, &st) == -1) {
@@ -550,7 +550,8 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
 
     if (rename(fullpath_tmp, fullpath) == -1) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not replace encrypted file", fullpath);
-        if (remove(fullpath_tmp) == -1) {
+        // if (remove(fullpath_tmp) == -1) {
+        if (unlink(fullpath_tmp) == -1 && errno != ENOENT) {
             fiorino_log_errno(FIORINO_LOG_ERROR, "could not delete temporary", fullpath_tmp);
         }
         goto cleanup_encrypt;
