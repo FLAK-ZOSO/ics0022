@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
     if (fiorino_encrypt_stream(&vault_, &file_)) {
         fiorino_cleanse(passphrase, sizeof passphrase);
         fprintf(stderr, "Decryption failed, aborting.\n");
+        if (fclose(file) == EOF) {
+            fprintf(stderr, "Closing the input stream failed.\n");
+        }
         return EXIT_FAILURE;
     }
 
