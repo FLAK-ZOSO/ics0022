@@ -73,6 +73,7 @@ int main(void) {
     assert(unlink("private.txt") == 0);
     assert(unlink(".fiorino/test/blocked.enc") == 0);
     assert(unlink(".fiorino/test/report.enc") == 0);
+    assert(unlink(".fiorino/test/.auth") == 0);
     assert(rmdir(".fiorino/test") == 0);
     assert(rmdir(".fiorino") == 0);
     assert(fchdir(previous_dir) == 0);

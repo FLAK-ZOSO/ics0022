@@ -49,6 +49,7 @@ int main(void) {
     file.name = "oversized";
     assert(fiorino_encrypt_stream(&vault, &file) != 0);
     assert(access(".fiorino/test/oversized.enc", F_OK) == -1);
+    assert(unlink(".fiorino/test/.auth") == 0);
 
     assert(fclose(input) == 0);
     assert(rmdir(".fiorino/test") == 0);

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ui.h>
 
@@ -22,6 +23,10 @@
                                     + FIORINO_IV_SIZE \
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
+
+#define FIORINO_VAULT_AUTH_FILE ".auth"
+#define FIORINO_AUTH_SALT_SIZE 16
+#define FIORINO_AUTH_SIZE (FIORINO_AUTH_SALT_SIZE + FIORINO_KEY_SIZE)
 
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
     if (buffer == NULL || buffer_size == 0 || buffer_size > INT_MAX)
@@ -147,8 +152,61 @@ int vault_directory_exists(struct Vault* vault) {
             return 1;
         }
     }
+    char authpath[PATH_MAX];
+    int auth_length = snprintf(authpath, sizeof authpath, "%s/%s",
+                               vaultpath, FIORINO_VAULT_AUTH_FILE);
+    int auth_result = 1;
+    if (auth_length < 0 || (size_t)auth_length >= sizeof authpath) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "vault authentication path is too long");
+    } else {
+        int authfd = open(authpath, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC |
+                          O_NOFOLLOW, FIORINO_VAULT_PERM);
+        unsigned char record[FIORINO_AUTH_SIZE];
+        unsigned char derived[FIORINO_KEY_SIZE];
+        if (authfd >= 0) {
+            if (RAND_priv_bytes(record, FIORINO_AUTH_SALT_SIZE) == 1 &&
+                PKCS5_PBKDF2_HMAC(vault->passphrase, -1, record,
+                                  FIORINO_AUTH_SALT_SIZE,
+                                  FIORINO_PBKDF2_ITERATIONS, EVP_sha256(),
+                                  FIORINO_KEY_SIZE, derived) == 1 &&
+                write(authfd, record, FIORINO_AUTH_SALT_SIZE) == FIORINO_AUTH_SALT_SIZE &&
+                write(authfd, derived, FIORINO_KEY_SIZE) == FIORINO_KEY_SIZE &&
+                fsync(authfd) == 0) {
+                fiorino_log_message(FIORINO_LOG_INFO,
+                                    "vault authentication record created: '%s'",
+                                    vault->vault);
+                auth_result = 0;
+            } else {
+                fiorino_log_message(FIORINO_LOG_ERROR,
+                                    "could not create vault authentication record");
+            }
+            close(authfd);
+            if (auth_result != 0) unlink(authpath);
+        } else if (errno == EEXIST) {
+            authfd = open(authpath, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+            if (authfd >= 0 && read(authfd, record, sizeof record) == sizeof record &&
+                PKCS5_PBKDF2_HMAC(vault->passphrase, -1, record,
+                                  FIORINO_AUTH_SALT_SIZE,
+                                  FIORINO_PBKDF2_ITERATIONS, EVP_sha256(),
+                                  FIORINO_KEY_SIZE, derived) == 1 &&
+                CRYPTO_memcmp(derived, record + FIORINO_AUTH_SALT_SIZE,
+                              FIORINO_KEY_SIZE) == 0) {
+                auth_result = 0;
+            } else {
+                fiorino_log_message(FIORINO_LOG_WARNING,
+                                    "vault authentication failed: '%s'",
+                                    vault->vault);
+            }
+            if (authfd >= 0) close(authfd);
+        } else {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not open vault authentication record", authpath);
+        }
+        OPENSSL_cleanse(record, sizeof record);
+        OPENSSL_cleanse(derived, sizeof derived);
+    }
     free(vaultpath);
-    return 0;
+    return auth_result;
 }
 
 /** \brief Idempotently creates a vault directory with correct permissions

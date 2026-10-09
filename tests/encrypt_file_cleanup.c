@@ -64,6 +64,8 @@ int main(void) {
     assert(snprintf(path, sizeof path, "%s/.fiorino/test/sample.enc",
                     home) > 0);
     assert(unlink(path) == 0);
+    assert(snprintf(path, sizeof path, "%s/.fiorino/test/.auth", home) > 0);
+    assert(unlink(path) == 0);
     assert(snprintf(path, sizeof path, "%s/.fiorino/test", home) > 0);
     assert(rmdir(path) == 0);
     assert(snprintf(path, sizeof path, "%s/.fiorino", home) > 0);
