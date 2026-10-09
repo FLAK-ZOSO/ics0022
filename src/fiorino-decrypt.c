@@ -41,10 +41,12 @@ int main(int argc, char** argv) {
     };
 
     if (fiorino_decrypt(&vault_, filename)) {
+        OPENSSL_cleanse(passphrase, sizeof passphrase);
         fprintf(stderr, "Decryption failed, aborting.\n");
         return EXIT_FAILURE;
     }
 
+    OPENSSL_cleanse(passphrase, sizeof passphrase);
     puts("Your file has been decrypted successfully");
     return EXIT_SUCCESS;
 }
