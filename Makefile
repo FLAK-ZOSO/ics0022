@@ -31,13 +31,13 @@ build/fiorino-decrypt.o: src/fiorino-decrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-decrypt: lib/fiorino.so build/fiorino-decrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-encrypt: lib/fiorino.so build/fiorino-encrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
 	@bash tests/cli_usage.sh

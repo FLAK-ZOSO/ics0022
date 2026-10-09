@@ -13,12 +13,19 @@
 static int run_cli(const char *program, const char *home,
                    const char *filename, const char *input)
 {
+    char cwd[PATH_MAX];
+    assert(getcwd(cwd, sizeof cwd) != NULL);
+    char library_path[PATH_MAX];
+    assert(snprintf(library_path, sizeof library_path, "%s/lib", cwd)
+           < (int)sizeof library_path);
+
     int terminal;
     pid_t child = forkpty(&terminal, NULL, NULL, NULL);
     assert(child >= 0);
 
     if (child == 0) {
         assert(setenv("HOME", home, 1) == 0);
+        assert(setenv("LD_LIBRARY_PATH", library_path, 1) == 0);
         assert(chdir(home) == 0);
         execl(program, program, "-f", filename, (char *)NULL);
         _exit(127);
@@ -30,7 +37,11 @@ static int run_cli(const char *program, const char *home,
     int status;
     assert(waitpid(child, &status, 0) == child);
     close(terminal);
-    assert(WIFEXITED(status));
+    if (!WIFEXITED(status)) {
+        fprintf(stderr, "%s terminated by signal %d\n", program,
+                WTERMSIG(status));
+        return 128 + WTERMSIG(status);
+    }
     return WEXITSTATUS(status);
 }
 
