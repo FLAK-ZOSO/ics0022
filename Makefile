@@ -15,6 +15,8 @@ CC=cc
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/libfiorino.so
 
+cli: build/fiorino-encrypt build/fiorino-decrypt
+
 build lib:
 	mkdir -p $@
 
@@ -95,4 +97,4 @@ memtest: $(TEST_BINS)
 clean:
 	rm -r build lib
 
-.PHONY: all clean test memtest
+.PHONY: all cli clean test memtest
