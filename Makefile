@@ -13,7 +13,7 @@ CC=cc
 # CC=/opt/fil/bin/filcc
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
-all: lib/fiorino.so
+all: lib/libfiorino.so
 
 build lib:
 	mkdir -p $@
@@ -21,7 +21,7 @@ build lib:
 build/%.o: src/%.c src/%.h src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -fPIC -c -o $@ $<
 
-lib/fiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
+lib/libfiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	$(CC) -shared -o $@ $^ -lcrypto
 
 lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
@@ -30,13 +30,13 @@ lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.
 build/fiorino-decrypt.o: src/fiorino-decrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-build/fiorino-decrypt: lib/fiorino.so build/fiorino-decrypt.o
+build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-build/fiorino-encrypt: lib/fiorino.so build/fiorino-encrypt.o
+build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
@@ -54,20 +54,20 @@ build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bund
 build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h src/fiorino_log.c src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c src/fiorino_log.c
 
-build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/fiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_fiorino_log: tests/fiorino_log.c src/fiorino_log.c src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -o $@ tests/fiorino_log.c src/fiorino_log.c
 
-build/test_fiorino_roundtrip: tests/fiorino_roundtrip.c lib/fiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+build/test_fiorino_roundtrip: tests/fiorino_roundtrip.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
-build/test_fiorino_limits: tests/fiorino_limits.c lib/fiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+build/test_fiorino_limits: tests/fiorino_limits.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
-build/test_fiorino_symlink: tests/fiorino_symlink.c lib/fiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< ./lib/fiorino.so -Wl,-rpath,$(CURDIR)/lib
+build/test_fiorino_symlink: tests/fiorino_symlink.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_roundtrip
 	./build/test_encrypt_gcm
