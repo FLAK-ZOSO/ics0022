@@ -26,6 +26,12 @@ lib/fiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log
 lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	ar rcs $@ $^
 
+build/fiorino-decrypt.o: src/fiorino-decrypt.h src/fiorino-decrypt.c
+	$(CC) $(CCFLAGS) -c -o $@ $<
+
+build/fiorino-decrypt: lib/fiorino.so build/fiorino-decrypt.o
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o lib/fiorino.so
+
 build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h src/fiorino_log.c src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c src/fiorino_log.c -lcrypto
 

@@ -133,7 +133,7 @@ See these slides in week 3 materials.
 ## User interface
 
 ```bash
-fiorino encrypt --vault default --files ./file1.txt ./file2.jpeg
+fiorino encrypt -v default -f ./file1.txt ./file2.jpeg
 ```
 
 - these will be stored as `file1.txt.enc` and `file2.jpeg.enc` alongside a key for each
@@ -141,7 +141,7 @@ fiorino encrypt --vault default --files ./file1.txt ./file2.jpeg
 - unless differently specified with `--no-push`, this will push files and keys to all active mirrors
 
 ```bash
-fiorino decrypt --vault default --files file1.txt file2.jpeg
+fiorino decrypt -v default -f file1.txt file2.jpeg
 ```
 
 - these will be decrypted from `file1.txt.enc` and `file2.jpeg.enc`
@@ -167,7 +167,7 @@ Configuration, was any to be needed, will live in `/etc/fiorino.conf`.
 ## Application program interface
 
 > [!NOTE]
-> TODO; refer to [`fiorino.h`](src/fiorino.h)
+> Refer to [`fiorino.h`](src/fiorino.h)
 
 ## Chosen technology stack
 
