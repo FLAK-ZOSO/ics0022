@@ -436,6 +436,9 @@ static int write_output_file(FILE* output, const unsigned char* data,
 }
 
 int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "encryption requested for vault '%s', file '%s'",
+                        vault->vault, file->name);
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     if (runtime_setup_output_name(file->name)) return 1;
@@ -535,6 +538,9 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     }
 
     result = 0;
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "encryption succeeded for vault '%s', file '%s'",
+                        vault->vault, file->name);
 
 cleanup_encrypt:
     if (key != NULL) {
@@ -556,6 +562,9 @@ cleanup_encrypt:
 }
 
 int fiorino_decrypt(struct Vault* vault, const char* file) {
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "decryption requested for vault '%s', file '%s'",
+                        vault->vault, file);
     if (runtime_setup()) return 1;
     if (runtime_setup_vault(vault)) return 1;
     char* fullpath = runtime_setup_file(vault, file);
@@ -636,6 +645,9 @@ int fiorino_decrypt(struct Vault* vault, const char* file) {
     }
 
     result = 0;
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "decryption succeeded for vault '%s', file '%s'",
+                        vault->vault, file);
 
 cleanup_decrypt:
     if (key != NULL) {
