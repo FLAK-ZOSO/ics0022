@@ -75,6 +75,8 @@ int vault_root_directory_exists() {
         if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
             fiorino_log_errno(FIORINO_LOG_ERROR,
                               "could not create vault root directory", vault_root_path.we_wordv[0]);
+            wordfree(&vault_root_path);
+            return 1;
         } else {
             fiorino_log_message(FIORINO_LOG_INFO,
                                 "vault root directory created: '%s'",
@@ -132,6 +134,8 @@ int vault_directory_exists(struct Vault* vault) {
     if (stat(vaultpath, &st) == -1) {
         if (mkdir(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
             fiorino_log_errno(FIORINO_LOG_ERROR, "could not create vault directory", vaultpath);
+            free(vaultpath);
+            return 1;
         } else {
             fiorino_log_message(FIORINO_LOG_INFO,
                                 "vault created: '%s'", vault->vault);
