@@ -39,7 +39,7 @@ void fiorino_cleanse(void* buffer, size_t size) {
  */
 long long file_size(FILE*);
 /** \brief Verifies that the system and runtime conditions are met
- * \note Must be strictly idemponent (e.g. don't delete .fiorino/* by mistake)
+ * \note Must be strictly idemponent (e.g. don't delete .fiorino/ contents by mistake)
  * \return State
  * \retval 0 success
  * \retval 1 failure
