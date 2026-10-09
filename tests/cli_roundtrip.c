@@ -26,10 +26,10 @@ static int run_cli(const char *program, const char *home,
 
     size_t input_len = strlen(input);
     assert(write(terminal, input, input_len) == (ssize_t)input_len);
-    close(terminal);
 
     int status;
     assert(waitpid(child, &status, 0) == child);
+    close(terminal);
     assert(WIFEXITED(status));
     return WEXITSTATUS(status);
 }
