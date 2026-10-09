@@ -51,4 +51,12 @@ int fiorino_decrypt(struct Vault* vault, char* file);
  */
 int fiorino_encrypt(struct Vault* vault, struct FileToEncrypt* file);
 
+/** \brief Read a passphrase without echoing it on the terminal.
+ * \param buffer Destination buffer, including space for the terminating NUL
+ * \param buffer_size Size of buffer in bytes
+ * \param verify If nonzero, prompt twice and require matching entries
+ * \return 0 on success, negative value on failure
+ */
+int fiorino_read_password(char *buffer, size_t buffer_size, int verify);
+
 /** \todo see functionality declared in the user interface */

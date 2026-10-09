@@ -16,11 +16,19 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include <openssl/ui.h>
 
 #define FIORINO_MAX_ENCRYPTED_SIZE (FIORINO_MAX_FILE_SIZE \
                                     + FIORINO_IV_SIZE \
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
+
+int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
+    if (buffer == NULL || buffer_size == 0 || buffer_size > INT_MAX)
+        return -1;
+
+    return UI_UTIL_read_pw_string(buffer, (int)buffer_size, "Password: ", verify != 0);
+}
 
 /** \brief Returns the length of the file in bytes
  * \warning It leaves the cursor at the beginning of the file
