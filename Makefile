@@ -59,8 +59,11 @@ build/%.o: src/%.c src/%.h src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) -fPIC -c -o $@ $<
 
 # https://stackoverflow.com/a/53637238/15888601
-build/%.s: src/%.c
+build/%.s: src/%.c Makefile
 	$(CC) $(CCFLAGS) $(ASMFLAGS) -o $@ $<
+
+build/short-%.s: src/%.c Makefile
+	$(CC) --std=c17 -I./src -D_POSIX_C_SOURCE=200809L $(ASMFLAGS) -o $@ $<
 
 lib/libfiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	$(CC) -shared -o $@ $^ -lcrypto
