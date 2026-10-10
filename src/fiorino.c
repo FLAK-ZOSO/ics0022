@@ -162,8 +162,8 @@ int vault_directory_exists(struct Vault* vault) {
     } else {
         int authfd = open(auth_path, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC |
                           O_NOFOLLOW, FIORINO_VAULT_PERM);
-        unsigned char salt[FIORINO_PBKDF2_SALT_SIZE];
-        unsigned char derived[FIORINO_KEY_SIZE];
+        unsigned char salt[FIORINO_PBKDF2_SALT_SIZE] = {0};
+        unsigned char derived[FIORINO_KEY_SIZE] = {0};
         if (authfd == -1) {
             if (errno != EEXIST) {
                 fiorino_log_errno(FIORINO_LOG_ERROR,
@@ -171,7 +171,7 @@ int vault_directory_exists(struct Vault* vault) {
                                   auth_path);
                 auth_failed = 1;
             } else if (errno == EEXIST) {
-                unsigned char stored[FIORINO_KEY_SIZE];
+                unsigned char stored[FIORINO_KEY_SIZE] = {0};
                 authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
                 if (authfd == -1) {
                     fiorino_log_errno(FIORINO_LOG_DEBUG,
