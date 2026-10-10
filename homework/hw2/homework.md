@@ -127,8 +127,70 @@ Shadow byte legend (one shadow byte represents 8 application bytes):
   400518:	call   400496 <show_status>
 ```
 
+At this point I have understood that the default behaviour is not to have a stack protector, so I recompiled
+
+```bash
+gcc -g -Wall -Wextra -fstack-protector-strong program.c -o program
+```
+
+```bash
+Dump of assembler code for function login:
+   0x00000000004004cb <+0>:	push   %rbp
+   0x00000000004004cc <+1>:	mov    %rsp,%rbp
+   0x00000000004004cf <+4>:	sub    $0x30,%rsp
+   0x00000000004004d3 <+8>:	mov    %rdi,-0x28(%rbp)
+   0x00000000004004d7 <+12>:	mov    %rsi,-0x30(%rbp)
+   0x00000000004004db <+16>:	mov    %fs:0x28,%rax
+   0x00000000004004e4 <+25>:	mov    %rax,-0x8(%rbp)
+   0x00000000004004e8 <+29>:	xor    %eax,%eax
+   0x00000000004004ea <+31>:	movl   $0x0,-0x18(%rbp)
+   0x00000000004004f1 <+38>:	mov    -0x30(%rbp),%rdx
+   0x00000000004004f5 <+42>:	lea    -0x14(%rbp),%rax
+   0x00000000004004f9 <+46>:	mov    %rdx,%rsi
+   0x00000000004004fc <+49>:	mov    %rax,%rdi
+   0x00000000004004ff <+52>:	call   0x400370 <strcpy@plt>
+=> 0x0000000000400504 <+57>:	lea    -0x14(%rbp),%rax
+   0x0000000000400508 <+61>:	mov    $0x4012ba,%esi
+   0x000000000040050d <+66>:	mov    %rax,%rdi
+   0x0000000000400510 <+69>:	call   0x4003b0 <strcmp@plt>
+   0x0000000000400515 <+74>:	test   %eax,%eax
+   0x0000000000400517 <+76>:	jne    0x400520 <login+85>
+   0x0000000000400519 <+78>:	movl   $0x1,-0x18(%rbp)
+   0x0000000000400520 <+85>:	cmpl   $0x0,-0x18(%rbp)
+   0x0000000000400524 <+89>:	je     0x40053e <login+115>
+   0x0000000000400526 <+91>:	mov    $0x4012c4,%edi
+   0x000000000040052b <+96>:	call   0x400380 <puts@plt>
+   0x0000000000400530 <+101>:	mov    -0x28(%rbp),%rax
+   0x0000000000400534 <+105>:	mov    %rax,%rdi
+   0x0000000000400537 <+108>:	call   0x4004a6 <show_status>
+   0x000000000040053c <+113>:	jmp    0x400548 <login+125>
+   0x000000000040053e <+115>:	mov    $0x4012d3,%edi
+   0x0000000000400543 <+120>:	call   0x400380 <puts@plt>
+   0x0000000000400548 <+125>:	mov    -0x18(%rbp),%eax
+   0x000000000040054b <+128>:	mov    -0x8(%rbp),%rdx
+   0x000000000040054f <+132>:	sub    %fs:0x28,%rdx
+   0x0000000000400558 <+141>:	je     0x40055f <login+148>
+   0x000000000040055a <+143>:	call   0x400390 <__stack_chk_fail@plt>
+   0x000000000040055f <+148>:	leave
+   0x0000000000400560 <+149>:	ret
+End of assembler dump.
+```
+*Don't mind the different addresses in other answers, because they were written before I noticed this detail*
+
 ### Questions
 
 1. Password is at a lower address (rbp-0x10) than the authenticated variable (rbp-0x04)
 2. Yes, in this build strcpy called to write to `password` can overwrite `authenticated`
-3. 
+3. The protective value was set to protect the return value and the stack frame, but the password can reach first the `authenticated` variable
+
+```bash
+Breakpoint 1, login (username=0x7fffffffe00a "alice", input=0x7fffffffe010 "secure1234567") at program.c:14
+14	    if (strcmp(password, "secure123") == 0) {
+(gdb) info locals
+password = "secure123456"
+authenticated = 55
+(gdb) print &authenticated
+$1 = (int *) 0x7fffffffdacc
+(gdb) print &password
+$2 = (char (*)[12]) 0x7fffffffdac0
+```
