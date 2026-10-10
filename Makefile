@@ -7,7 +7,7 @@ VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
 			build/test_fiorino_limits build/test_fiorino_roundtrip \
-			build/test_fiorino_symlink build/test_fiorino_log
+			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log
 CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt
 CC=cc
 # CC=/opt/fil/bin/filcc
@@ -106,6 +106,9 @@ build/test_fiorino_limits: tests/fiorino_limits.c lib/libfiorino.so | build
 build/test_fiorino_symlink: tests/fiorino_symlink.c lib/libfiorino.so | build
 	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
 
+build/test_fiorino_vault_symlink: tests/fiorino_vault_symlink.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+
 test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_roundtrip
 	./build/test_encrypt_gcm
 	./build/test_bundle
@@ -114,6 +117,7 @@ test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_round
 	./build/test_fiorino_limits
 	./build/test_fiorino_roundtrip
 	./build/test_fiorino_symlink
+	./build/test_fiorino_vault_symlink
 	./build/test_cli_roundtrip
 
 memtest: $(TEST_BINS)
