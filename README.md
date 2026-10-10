@@ -17,10 +17,6 @@ A vault is essentially a subdirectory where encrypted files are stored all under
 
 In this example, the first two files are encrypted under one primary key, and the other ones are under a second key.
 
-```bash
-fiorino decrypt --vault vault2 --files file3.txt file4.txt
-```
-
 ## Platforms
 
 Only Linux systems are supported.
