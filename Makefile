@@ -3,7 +3,8 @@ ASMFLAGS=-S -fverbose-asm
 DBGFLAGS=-g
 HARDEN ?= 1
 ifeq ($(HARDEN), 1)
-	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fPIE
+	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 \
+		-fstack-clash-protection -fstack-protector-strong -fPIE
 	HARDEN_LIB_LD_FLAGS=-Wl,-z,relro,-z,now
 	HARDEN_LD_FLAGS=-Wl,-z,relro,-z,now -pie
 endif
