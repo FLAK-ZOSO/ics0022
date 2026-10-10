@@ -5,8 +5,8 @@ HARDEN ?= 1
 ifeq ($(HARDEN), 1)
 	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 \
 		-fstack-clash-protection -fstack-protector-strong -fPIE
-	HARDEN_LIB_LD_FLAGS=-Wl,-z,relro,-z,now
-	HARDEN_LD_FLAGS=-Wl,-z,relro,-z,now -pie
+	HARDEN_LIB_LD_FLAGS=-Wl,-z,relro,-z,now,-z,noexecstack
+	HARDEN_LD_FLAGS=-Wl,-z,relro,-z,now,-z,noexecstack -pie
 endif
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
 	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS) $(HARDEN_CFLAGS)
