@@ -96,11 +96,12 @@ int vault_root_directory_exists() {
     return 0;
 }
 
-/** \brief Idempotently creates a vault directory with correct permissions
+/** \brief Idempotently prepares a vault directory and authenticates its password
  * \param vault The vault to be checked
  * \return Status code
- * \retval 0 success
- * \retval 1 failure
+ * \retval 0 vault is ready and authentication succeeded
+ * \retval 1 setup or I/O failure
+ * \retval FIORINO_AUTHENTICATION_FAILED password does not match the vault
  */
 int vault_directory_exists(struct Vault* vault) {
     if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") == 0 ||
@@ -200,9 +201,7 @@ int vault_directory_exists(struct Vault* vault) {
                     fiorino_log_message(FIORINO_LOG_DEBUG,
                                         "the derived key does not correspond to the one in %s",
                                         auth_path);
-                    auth_failed = 1;
-                    /// \todo different return code in this case, so we can bubble up
-                    ///       the fact that probably the user entered a wrong password
+                    auth_failed = FIORINO_AUTHENTICATION_FAILED;
                 } else {
                     fiorino_log_message(FIORINO_LOG_DEBUG,
                                         "the derived key corresponds to the one in %s",
@@ -289,8 +288,10 @@ int runtime_setup() {
 }
 
 int runtime_setup_vault(struct Vault* vault) {
-    return vault_directory_exists(vault)
-        || vault_user_corresponds(vault);
+    int result = vault_directory_exists(vault);
+    if (result != 0)
+        return result;
+    return vault_user_corresponds(vault);
 }
 
 /** \see https://stackoverflow.com/a/4553076/15888601 */

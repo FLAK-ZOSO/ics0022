@@ -52,9 +52,13 @@ int main(int argc, char** argv) {
         file, filename
     };
 
-    if (fiorino_encrypt_stream(&vault_, &file_)) {
+    int encrypt_result = fiorino_encrypt_stream(&vault_, &file_);
+    if (encrypt_result != 0) {
         fiorino_cleanse(passphrase, sizeof passphrase);
-        fprintf(stderr, "Encryption failed, aborting.\n");
+        if (encrypt_result == FIORINO_AUTHENTICATION_FAILED)
+            fprintf(stderr, "Wrong vault password, aborting.\n");
+        else
+            fprintf(stderr, "Encryption failed, aborting.\n");
         if (fclose(file) == EOF) {
             fprintf(stderr, "Closing the input stream failed.\n");
         }

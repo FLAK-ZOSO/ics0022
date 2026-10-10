@@ -7,6 +7,8 @@
 #define FIORINO_VAULT_ROOT_DIR "~/.fiorino"
 #define FIORINO_VAULT_DIR_PERM 0700
 #define FIORINO_VAULT_PERM 0600
+/** Return code used when the supplied password does not match the vault. */
+#define FIORINO_AUTHENTICATION_FAILED 3
 
 /** \brief Information needed to access a vault */
 struct Vault {
@@ -32,6 +34,7 @@ struct FileToEncrypt {
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
+ * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
  */
 int fiorino_decrypt(struct Vault* vault, const char* file);
 
@@ -48,6 +51,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \retval 0 success
  * \retval 1 other failure
  * \retval 2 OpenSSL failure
+ * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
  */
 int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file);
 

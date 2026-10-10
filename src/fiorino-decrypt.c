@@ -42,9 +42,13 @@ int main(int argc, char** argv) {
         passphrase
     };
 
-    if (fiorino_decrypt(&vault_, filename)) {
+    int decrypt_result = fiorino_decrypt(&vault_, filename);
+    if (decrypt_result != 0) {
         fiorino_cleanse(passphrase, sizeof passphrase);
-        fprintf(stderr, "Decryption failed, aborting.\n");
+        if (decrypt_result == FIORINO_AUTHENTICATION_FAILED)
+            fprintf(stderr, "Wrong vault password, aborting.\n");
+        else
+            fprintf(stderr, "Decryption failed, aborting.\n");
         return EXIT_FAILURE;
     }
 
