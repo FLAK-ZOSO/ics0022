@@ -11,11 +11,18 @@ TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cle
 CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt
 CC=cc
 # CC=/opt/fil/bin/filcc
+DIST_NAME ?= fiorino
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/libfiorino.so
 
 cli: build/fiorino-encrypt build/fiorino-decrypt
+
+sdist:
+	mkdir -p dist
+	tar -czf dist/$(DIST_NAME).tar.gz \
+		--transform='s,^,$(DIST_NAME)/,' \
+		Makefile README.md DESIGN.md CHECKPOINTS.md src tests images
 
 build lib:
 	mkdir -p $@
@@ -97,4 +104,4 @@ memtest: $(TEST_BINS)
 clean:
 	rm -r build lib
 
-.PHONY: all cli clean test memtest
+.PHONY: all cli sdist clean test memtest

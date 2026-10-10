@@ -47,11 +47,8 @@ Runtime dependencies:
 
 Test dependencies:
 
-- Fedora: `bash valgrind`
-- Debian: `bash valgrind`
-
-The CLI pseudo-terminal test also links against `libutil`, provided by
-`glibc-devel` on Fedora and normally by `libc6-dev` on Debian.
+- Fedora: `bash valgrind python3`
+- Debian: `bash valgrind python3`
 
 ### CLI only
 
