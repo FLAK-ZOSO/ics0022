@@ -134,7 +134,13 @@ int vault_directory_exists(struct Vault* vault) {
 
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
-    if (stat(vaultpath, &st) == -1) {
+    if (lstat(vaultpath, &st) == -1) {
+        if (errno != ENOENT) {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not inspect vault directory", vaultpath);
+            free(vaultpath);
+            return 1;
+        }
         if (mkdir(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
             fiorino_log_errno(FIORINO_LOG_ERROR, "could not create vault directory", vaultpath);
             free(vaultpath);
@@ -143,7 +149,12 @@ int vault_directory_exists(struct Vault* vault) {
             fiorino_log_message(FIORINO_LOG_INFO,
                                 "vault created: '%s'", vault->vault);
         }
-    } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
+    } else if (S_ISLNK(st.st_mode) || !S_ISDIR(st.st_mode)) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault path is not a real directory: '%s'", vaultpath);
+        free(vaultpath);
+        return 1;
+    } else if ((st.st_mode & 07777) != FIORINO_VAULT_DIR_PERM) {
         if (chmod(vaultpath, FIORINO_VAULT_DIR_PERM) == -1) {
             fiorino_log_errno(FIORINO_LOG_ERROR, "could not set vault permissions", vaultpath);
             free(vaultpath);
