@@ -151,13 +151,15 @@ int vault_directory_exists(struct Vault* vault) {
 
     int auth_failed = 0;
     char auth_path[PATH_MAX];
-    size_t auth_path_size = snprintf(auth_path, sizeof auth_path, "%s/%s",
-                                     vaultpath, FIORINO_AUTH_FILENAME);
-    if (auth_path_size < vaultpath_alloc + sizeof FIORINO_AUTH_FILENAME) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "the auth path was not fully written");
+    int auth_path_size = snprintf(auth_path, sizeof auth_path, "%s/%s",
+                                  vaultpath, FIORINO_AUTH_FILENAME);
+    if (auth_path_size < 0) {
+        fiorino_log_message(FIORINO_LOG_ERROR,
+                            "could not format vault authentication path");
         auth_failed = 1;
-    } else if (auth_path_size >= sizeof auth_path) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "the auth path is too long");
+    } else if ((size_t)auth_path_size >= sizeof auth_path) {
+        fiorino_log_message(FIORINO_LOG_ERROR,
+                            "the auth path is too long");
         auth_failed = 1;
     } else {
         int authfd = open(auth_path, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC |
