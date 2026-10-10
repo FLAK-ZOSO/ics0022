@@ -99,31 +99,38 @@ build/test_cli_fuzz: $(CLI_TESTS) tests/cli_fuzz.sh | build
 	@bash tests/cli_fuzz.sh
 
 build/test_cli_roundtrip: $(CLI_TESTS) tests/cli_roundtrip.c | build
-	$(CC) $(CCFLAGS) -o $@ tests/cli_roundtrip.c -lutil
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ tests/cli_roundtrip.c -lutil
 
 build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h src/fiorino_log.c src/fiorino_log.h | build
-	$(CC) $(CCFLAGS) -o $@ tests/encrypt_gcm.c src/encrypt.c src/fiorino_log.c -lcrypto
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -U_FORTIFY_SOURCE -o $@ \
+		tests/encrypt_gcm.c src/encrypt.c src/fiorino_log.c -lcrypto
 
 build/test_bundle: tests/bundle.c src/bundle.c src/bundle.h src/fiorino.h src/fiorino_log.c src/fiorino_log.h | build
-	$(CC) $(CCFLAGS) -o $@ tests/bundle.c src/bundle.c src/fiorino_log.c
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -U_FORTIFY_SOURCE -o $@ \
+		tests/bundle.c src/bundle.c src/fiorino_log.c
 
 build/test_encrypt_file_cleanup: tests/encrypt_file_cleanup.c lib/libfiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_fiorino_log: tests/fiorino_log.c src/fiorino_log.c src/fiorino_log.h | build
-	$(CC) $(CCFLAGS) -o $@ tests/fiorino_log.c src/fiorino_log.c
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -U_FORTIFY_SOURCE -o $@ tests/fiorino_log.c src/fiorino_log.c
 
 build/test_fiorino_roundtrip: tests/fiorino_roundtrip.c lib/libfiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_fiorino_limits: tests/fiorino_limits.c lib/libfiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_fiorino_symlink: tests/fiorino_symlink.c lib/libfiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 build/test_fiorino_vault_symlink: tests/fiorino_vault_symlink.c lib/libfiorino.so | build
-	$(CC) $(CCFLAGS) -o $@ $< -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
 test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_roundtrip
 	./build/test_encrypt_gcm
