@@ -150,12 +150,11 @@ int vault_directory_exists(struct Vault* vault) {
             return 1;
         }
     }
-    
-    bool auth_failed = 0;
+
+    int auth_failed = 0;
     char auth_path[PATH_MAX];
     size_t auth_path_size = snprintf(auth_path, sizeof auth_path, "%s/%s",
                                      vaultpath, FIORINO_AUTH_FILENAME);
-    free(vaultpath);
     if (auth_path_size < vaultpath_alloc + sizeof FIORINO_AUTH_FILENAME) {
         fiorino_log_message(FIORINO_LOG_ERROR, "the auth path was not fully written");
         auth_failed = 1;
@@ -168,9 +167,50 @@ int vault_directory_exists(struct Vault* vault) {
         if (authfd == -1) {
             fiorino_log_message(FIORINO_LOG_ERROR,
                                 "could not create vault authentication record");
+            /// \todo compare
         } else {
-            unsigned char record[FIORINO_AUTH_SIZE];
+            unsigned char salt[FIORINO_AUTH_SIZE];
             unsigned char derived[FIORINO_KEY_SIZE];
+            // https://docs.openssl.org/3.5/man3/RAND_bytes/
+            if (RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE) == 1) {
+                // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
+                if (PKCS5_PBKDF2_HMAC(
+                    vault->passphrase, -1,
+                    salt, FIORINO_PBKDF2_SALT_SIZE,
+                    FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
+                    FIORINO_KEY_SIZE, derived
+                ) == 1) {
+                    if (write(authfd, salt, FIORINO_AUTH_SALT_SIZE) != -1) {
+                        if (write(authfd, derived, FIORINO_KEY_SIZE) != -1) {
+
+                            fiorino_log_message(FIORINO_LOG_INFO,
+                                    "vault authentication record created: '%s'",
+                                    vault->vault);
+                            if (close(authfd) != -1) {
+                                auth_failed = 0; // Redundant, but I like it explicit
+                            } else {
+                                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                                  "could not close %s", auth_path);
+                                auth_failed = 1;
+                            }
+                        } else {
+                            fiorino_log_message(FIORINO_LOG_ERROR,
+                                                "could not write the derived hash");
+                            auth_failed = 1;
+                        }
+                    } else {
+                        fiorino_log_message(FIORINO_LOG_ERROR,
+                                            "could not write the salt");
+                        auth_failed = 1;
+                    }
+                } else {
+                    fiorino_log_message(FIORINO_LOG_ERROR, "could not derive a key");
+                    auth_failed = 1;
+                }
+            } else {
+                fiorino_log_message(FIORINO_LOG_ERROR, "could not generate encryption salt");
+                auth_failed = 1;
+            }
             /// \todo implement
         }
     }
