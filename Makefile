@@ -1,8 +1,12 @@
 SANFLAGS=-fsanitize=address,undefined
 ASMFLAGS=-S -fverbose-asm
 DBGFLAGS=-g
+HARDEN ?= 1
+ifeq ($(HARDEN), 1)
+	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fPIE
+endif
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
-	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS)
+	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS) $(HARDEN_CFLAGS)
 VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
