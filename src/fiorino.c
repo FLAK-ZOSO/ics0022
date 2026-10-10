@@ -17,6 +17,7 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <openssl/ui.h>
+#include <openssl/crypto.h>
 
 #define FIORINO_MAX_ENCRYPTED_SIZE (FIORINO_MAX_FILE_SIZE \
                                     + FIORINO_IV_SIZE \
