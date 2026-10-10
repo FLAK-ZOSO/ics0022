@@ -218,6 +218,7 @@ $2 = (char (*)[12]) 0x7fffffffdac0
 
 ---
 
+<!--
 I stopped doing the homework when I read this.
 
 > Do not skip the wording of the last question. A student who writes that the stack protector fixed the bug has drawn precisely the wrong conclusion from the evidence
@@ -225,3 +226,4 @@ I stopped doing the homework when I read this.
 Like, I am demoralized when I see that an homework has been made up by a clanker and not even proofread. As a student I have taken >5 hours to complete the other homework cleanly by hand, and while I fully understand that at the scale of >100 students it would be unrealistic to expect manual grading, the authorship of the questions...
 
 **Nothing personal, really: I won't mention this to anyone** and it's just between us if this will ever be read, but I'd rather not complete the homework at these conditions :(
+-->
