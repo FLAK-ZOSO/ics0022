@@ -194,3 +194,34 @@ $1 = (int *) 0x7fffffffdacc
 (gdb) print &password
 $2 = (char (*)[12]) 0x7fffffffdac0
 ```
+
+# Part C
+
+```bash
+00000000004004bb <login>:
+  4004bb:       push   rbp
+  4004bc:       mov    rbp,rsp
+  4004bf:       sub    rsp,0x20
+  4004c3:       mov    QWORD PTR [rbp-0x18],rdi
+  4004c7:       mov    QWORD PTR [rbp-0x20],rsi
+  4004cb:       mov    DWORD PTR [rbp-0x4],0x0
+  4004d2:       mov    rdx,QWORD PTR [rbp-0x20]
+  4004d6:       lea    rax,[rbp-0x10]
+  4004da:       mov    rsi,rdx
+  4004dd:       mov    rdi,rax
+  4004e0:       call   400370 <strcpy@plt>
+  4004e5:       lea    rax,[rbp-0x10]
+  4004e9:       mov    esi,0x401262
+  4004ee:       mov    rdi,rax
+  4004f1:       call   4003a0 <strcmp@plt>
+```
+
+---
+
+I stopped doing the homework when I read this.
+
+> Do not skip the wording of the last question. A student who writes that the stack protector fixed the bug has drawn precisely the wrong conclusion from the evidence
+
+Like, I am demoralized when I see that an homework has been made up by a clanker and not even proofread. As a student I have taken >5 hours to complete the other homework cleanly by hand, and while I fully understand that at the scale of >100 students it would be unrealistic to expect manual grading, the authorship of the questions...
+
+**Nothing personal, really: I won't mention this to anyone** and it's just between us if this will ever be read, but I'd rather not complete the homework at these conditions :(
