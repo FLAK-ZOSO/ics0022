@@ -12,6 +12,9 @@ CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt
 CC=cc
 # CC=/opt/fil/bin/filcc
 DIST_NAME ?= fiorino
+DIST_PLATFORM ?= linux-x86_64
+PREFIX ?= /usr/local
+DESTDIR ?=
 
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/libfiorino.so
@@ -23,6 +26,31 @@ sdist:
 	tar -czf dist/$(DIST_NAME).tar.gz \
 		--transform='s,^,$(DIST_NAME)/,' \
 		Makefile README.md DESIGN.md CHECKPOINTS.md src tests images
+
+dist: all cli
+	mkdir -p dist
+	tar -czf dist/$(DIST_NAME)-$(DIST_PLATFORM).tar.gz \
+		--transform='s,^,$(DIST_NAME)/,' \
+		README.md DESIGN.md CHECKPOINTS.md \
+		build/fiorino-encrypt build/fiorino-decrypt lib/libfiorino.so
+
+install: all cli
+	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/lib \
+		$(DESTDIR)$(PREFIX)/share/doc/fiorino
+	install -m 0755 build/fiorino-encrypt build/fiorino-decrypt \
+		$(DESTDIR)$(PREFIX)/bin/
+	install -m 0644 lib/libfiorino.so $(DESTDIR)$(PREFIX)/lib/
+	install -m 0644 README.md DESIGN.md CHECKPOINTS.md \
+		$(DESTDIR)$(PREFIX)/share/doc/fiorino/
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/fiorino-encrypt \
+		$(DESTDIR)$(PREFIX)/bin/fiorino-decrypt \
+		$(DESTDIR)$(PREFIX)/lib/libfiorino.so
+	rm -f $(DESTDIR)$(PREFIX)/share/doc/fiorino/README.md \
+		$(DESTDIR)$(PREFIX)/share/doc/fiorino/DESIGN.md \
+		$(DESTDIR)$(PREFIX)/share/doc/fiorino/CHECKPOINTS.md
+	rmdir $(DESTDIR)$(PREFIX)/share/doc/fiorino 2>/dev/null || true
 
 build lib:
 	mkdir -p $@
@@ -40,13 +68,13 @@ build/fiorino-decrypt.o: src/fiorino-decrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,'$$ORIGIN/../lib'
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,$(CURDIR)/lib
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,'$$ORIGIN/../lib'
 
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
 	@bash tests/cli_usage.sh
@@ -104,4 +132,4 @@ memtest: $(TEST_BINS)
 clean:
 	rm -r build lib
 
-.PHONY: all cli sdist clean test memtest
+.PHONY: all cli sdist dist install uninstall clean test memtest
