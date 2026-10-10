@@ -1,6 +1,7 @@
 SANFLAGS=-fsanitize=address,undefined
 ASMFLAGS=-S -fverbose-asm
 DBGFLAGS=-g
+# https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html
 HARDEN ?= 1
 ifeq ($(HARDEN), 1)
 	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 \
