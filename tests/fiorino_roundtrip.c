@@ -144,6 +144,7 @@ int main(void) {
     assert(unlink("outside.enc") == 0);
     assert(unlink(".fiorino/test/sample.enc") == 0);
     assert(unlink(".fiorino/test/empty.enc") == 0);
+    assert(unlink(".fiorino/test/.auth") == 0);
     assert(rmdir(".fiorino/test") == 0);
     assert(rmdir(".fiorino") == 0);
     assert(fchdir(previous_dir) == 0);

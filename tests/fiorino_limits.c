@@ -51,6 +51,7 @@ int main(void) {
     assert(access(".fiorino/test/oversized.enc", F_OK) == -1);
 
     assert(fclose(input) == 0);
+    assert(unlink(".fiorino/test/.auth") == 0);
     assert(rmdir(".fiorino/test") == 0);
     assert(rmdir(".fiorino") == 0);
     assert(fchdir(previous_dir) == 0);
