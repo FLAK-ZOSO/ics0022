@@ -158,7 +158,7 @@ int vault_directory_exists(struct Vault* vault) {
     if (auth_path_size < vaultpath_alloc + sizeof FIORINO_AUTH_FILENAME) {
         fiorino_log_message(FIORINO_LOG_ERROR, "the auth path was not fully written");
         auth_failed = 1;
-    } else if (auth_path_size > PATH_MAX) {
+    } else if (auth_path_size >= sizeof auth_path) {
         fiorino_log_message(FIORINO_LOG_ERROR, "the auth path is too long");
         auth_failed = 1;
     } else {
@@ -169,49 +169,47 @@ int vault_directory_exists(struct Vault* vault) {
                                 "could not create vault authentication record");
             /// \todo compare
         } else {
-            unsigned char salt[FIORINO_AUTH_SIZE];
+            unsigned char salt[FIORINO_AUTH_SALT_SIZE];
             unsigned char derived[FIORINO_KEY_SIZE];
-            // https://docs.openssl.org/3.5/man3/RAND_bytes/
-            if (RAND_priv_bytes(salt, FIORINO_PBKDF2_SALT_SIZE) == 1) {
-                // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
-                if (PKCS5_PBKDF2_HMAC(
-                    vault->passphrase, -1,
-                    salt, FIORINO_PBKDF2_SALT_SIZE,
-                    FIORINO_PBKDF2_ITERATIONS, EVP_sha256(), // https://stackoverflow.com/a/63201320
-                    FIORINO_KEY_SIZE, derived
-                ) == 1) {
-                    if (write(authfd, salt, FIORINO_AUTH_SALT_SIZE) != -1) {
-                        if (write(authfd, derived, FIORINO_KEY_SIZE) != -1) {
 
-                            fiorino_log_message(FIORINO_LOG_INFO,
-                                    "vault authentication record created: '%s'",
-                                    vault->vault);
-                            if (close(authfd) != -1) {
-                                auth_failed = 0; // Redundant, but I like it explicit
-                            } else {
-                                fiorino_log_errno(FIORINO_LOG_ERROR,
-                                                  "could not close %s", auth_path);
-                                auth_failed = 1;
-                            }
-                        } else {
-                            fiorino_log_message(FIORINO_LOG_ERROR,
-                                                "could not write the derived hash");
-                            auth_failed = 1;
-                        }
-                    } else {
-                        fiorino_log_message(FIORINO_LOG_ERROR,
-                                            "could not write the salt");
-                        auth_failed = 1;
-                    }
-                } else {
-                    fiorino_log_message(FIORINO_LOG_ERROR, "could not derive a key");
-                    auth_failed = 1;
-                }
-            } else {
-                fiorino_log_message(FIORINO_LOG_ERROR, "could not generate encryption salt");
+            if (RAND_priv_bytes(salt, sizeof salt) != 1) {
+                fiorino_log_message(FIORINO_LOG_ERROR,
+                                    "could not generate authentication salt");
+                auth_failed = 1;
+            } else if (PKCS5_PBKDF2_HMAC(
+                           vault->passphrase, -1, salt, sizeof salt,
+                           FIORINO_PBKDF2_ITERATIONS, EVP_sha256(),
+                           sizeof derived, derived) != 1) {
+                fiorino_log_message(FIORINO_LOG_ERROR,
+                                    "could not derive vault authentication verifier");
+                auth_failed = 1;
+            } else if (write(authfd, salt, sizeof salt) != (ssize_t)sizeof salt) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not write authentication salt", auth_path);
+                auth_failed = 1;
+            } else if (write(authfd, derived, sizeof derived) !=
+                       (ssize_t)sizeof derived) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not write authentication verifier", auth_path);
                 auth_failed = 1;
             }
-            /// \todo implement
+
+            if (auth_failed) {
+                close(authfd);
+                unlink(auth_path);
+            } else if (close(authfd) == -1) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not close vault authentication record",
+                                  auth_path);
+                unlink(auth_path);
+                auth_failed = 1;
+            } else {
+                fiorino_log_message(FIORINO_LOG_INFO,
+                                    "vault authentication record created: '%s'",
+                                    vault->vault);
+            }
+            OPENSSL_cleanse(salt, sizeof salt);
+            OPENSSL_cleanse(derived, sizeof derived);
         }
     }
 

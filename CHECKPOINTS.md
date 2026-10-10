@@ -7,7 +7,7 @@
 - Password prompting: wrapped by Fiorino’s API.
 - Stream-based encryption API: named fiorino_encrypt_stream.
 - Path and symlink validation: implemented and tested.
-- Logging: implemented.
+- Logging: implemented, but need to tell apart error and debugging.
 - CLI: in progress; encrypt and decrypt commands are partially implemented.
 
 ## Before checkpoint 2
