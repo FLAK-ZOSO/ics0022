@@ -23,8 +23,6 @@
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
 #define FIORINO_AUTH_FILENAME ".auth"
-#define FIORINO_AUTH_SALT_SIZE 16
-#define FIORINO_AUTH_SIZE (FIORINO_AUTH_SALT_SIZE + FIORINO_KEY_SIZE)
 
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
     if (buffer == NULL || buffer_size == 0 || buffer_size > INT_MAX)
@@ -164,14 +162,61 @@ int vault_directory_exists(struct Vault* vault) {
     } else {
         int authfd = open(auth_path, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC |
                           O_NOFOLLOW, FIORINO_VAULT_PERM);
+        unsigned char salt[FIORINO_PBKDF2_SALT_SIZE];
+        unsigned char derived[FIORINO_KEY_SIZE];
         if (authfd == -1) {
-            fiorino_log_message(FIORINO_LOG_ERROR,
-                                "could not create vault authentication record");
-            /// \todo compare
+            if (errno != EEXIST) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not create vault authentication record",
+                                  auth_path);
+                auth_failed = 1;
+            } else if (errno == EEXIST) {
+                unsigned char stored[FIORINO_KEY_SIZE];
+                authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+                if (authfd == -1) {
+                    fiorino_log_errno(FIORINO_LOG_DEBUG,
+                                      "could not open to read", auth_path);
+                    auth_failed = 1;
+                } else if (read(authfd, salt, sizeof salt) != sizeof salt) {
+                    fiorino_log_errno(FIORINO_LOG_DEBUG,
+                                      "could not read salt", auth_path);
+                    auth_failed = 1;
+                } else if (read(authfd, stored, sizeof stored) != sizeof stored) {
+                    fiorino_log_errno(FIORINO_LOG_DEBUG,
+                                      "could not read stored hash", auth_path);
+                    auth_failed = 1;
+                } else if (PKCS5_PBKDF2_HMAC(
+                            vault->passphrase, -1,
+                            salt, sizeof salt,
+                            FIORINO_PBKDF2_ITERATIONS, EVP_sha256(),
+                            FIORINO_KEY_SIZE, derived) != 1) {
+                    fiorino_log_message(FIORINO_LOG_DEBUG,
+                                        "could not derive key from %s", auth_path);
+                    auth_failed = 1;
+                } else if (CRYPTO_memcmp(derived, stored, FIORINO_KEY_SIZE) != 0) {
+                    fiorino_log_message(FIORINO_LOG_DEBUG,
+                                        "the derived key does not correspond to the one in %s",
+                                        auth_path);
+                    auth_failed = 1;
+                    /// \todo different return code in this case, so we can bubble up
+                    ///       the fact that probably the user entered a wrong password
+                } else {
+                    fiorino_log_message(FIORINO_LOG_DEBUG,
+                                        "the derived key corresponds to the one in %s",
+                                        auth_path);
+                    auth_failed = 0;
+                }
+                if (authfd >= 0) {
+                    if (close(authfd) == -1) {
+                        fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not close vault authentication record",
+                                  auth_path);
+                        auth_failed = 1;
+                    }
+                }
+                OPENSSL_cleanse(stored, sizeof stored);
+            }
         } else {
-            unsigned char salt[FIORINO_AUTH_SALT_SIZE];
-            unsigned char derived[FIORINO_KEY_SIZE];
-
             if (RAND_priv_bytes(salt, sizeof salt) != 1) {
                 fiorino_log_message(FIORINO_LOG_ERROR,
                                     "could not generate authentication salt");
@@ -192,7 +237,11 @@ int vault_directory_exists(struct Vault* vault) {
                 fiorino_log_errno(FIORINO_LOG_ERROR,
                                   "could not write authentication verifier", auth_path);
                 auth_failed = 1;
-            }
+            } else if (fsync(authfd) == -1) {
+                fiorino_log_errno(FIORINO_LOG_DEBUG,
+                                  "could not (f)sync to disk", auth_path);
+                auth_failed = 1;
+            } // Maybe this is a bit paranoid
 
             if (auth_failed) {
                 close(authfd);
@@ -208,9 +257,9 @@ int vault_directory_exists(struct Vault* vault) {
                                     "vault authentication record created: '%s'",
                                     vault->vault);
             }
-            OPENSSL_cleanse(salt, sizeof salt);
-            OPENSSL_cleanse(derived, sizeof derived);
         }
+        OPENSSL_cleanse(salt, sizeof salt);
+        OPENSSL_cleanse(derived, sizeof derived);
     }
 
     free(vaultpath);
