@@ -4,6 +4,8 @@ DBGFLAGS=-g
 HARDEN ?= 1
 ifeq ($(HARDEN), 1)
 	HARDEN_CFLAGS=-O2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fPIE
+	HARDEN_LIB_LD_FLAGS=-Wl,-z,relro,-z,now
+	HARDEN_LD_FLAGS=-Wl,-z,relro,-z,now -pie
 endif
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
 	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS) $(HARDEN_CFLAGS)
@@ -70,7 +72,7 @@ build/short-%.s: src/%.c Makefile
 	$(CC) --std=c17 -I./src -D_POSIX_C_SOURCE=200809L $(ASMFLAGS) -o $@ $<
 
 lib/libfiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
-	$(CC) -shared -o $@ $^ -lcrypto
+	$(CC) -shared $(HARDEN_LIB_LD_FLAGS) -o $@ $^ -lcrypto
 
 lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	ar rcs $@ $^
@@ -79,13 +81,15 @@ build/fiorino-decrypt.o: src/fiorino-decrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,'$$ORIGIN/../lib'
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib \
+		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o
-	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib -lfiorino -Wl,-rpath,'$$ORIGIN/../lib'
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib \
+		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
 
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
 	@bash tests/cli_usage.sh
