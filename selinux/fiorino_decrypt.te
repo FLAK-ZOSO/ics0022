@@ -1,0 +1,25 @@
+policy_module(fiorino_decrypt, 1.0.0)
+
+########################################
+#
+# Declarations
+#
+
+type fiorino_decrypt_t;
+type fiorino_decrypt_exec_t;
+init_daemon_domain(fiorino_decrypt_t, fiorino_decrypt_exec_t)
+
+permissive fiorino_decrypt_t;
+
+########################################
+#
+# fiorino_decrypt local policy
+#
+allow fiorino_decrypt_t self:fifo_file rw_fifo_file_perms;
+allow fiorino_decrypt_t self:unix_stream_socket create_stream_socket_perms;
+
+domain_use_interactive_fds(fiorino_decrypt_t)
+
+files_read_etc_files(fiorino_decrypt_t)
+
+miscfiles_read_localization(fiorino_decrypt_t)
