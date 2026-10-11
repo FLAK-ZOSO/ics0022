@@ -18,6 +18,7 @@ TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cle
 			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log
 CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt
 CC=cc
+STRIP ?= strip
 # CC=/opt/fil/bin/filcc
 DIST_NAME ?= fiorino
 DIST_PLATFORM ?= linux-x86_64
@@ -50,6 +51,12 @@ install: all cli
 	install -m 0644 lib/libfiorino.so $(DESTDIR)$(PREFIX)/lib/
 	install -m 0644 README.md DESIGN.md CHECKPOINTS.md \
 		$(DESTDIR)$(PREFIX)/share/doc/fiorino/
+
+install-strip: install
+	$(STRIP) --strip-unneeded \
+		$(DESTDIR)$(PREFIX)/bin/fiorino-encrypt \
+		$(DESTDIR)$(PREFIX)/bin/fiorino-decrypt \
+		$(DESTDIR)$(PREFIX)/lib/libfiorino.so
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/fiorino-encrypt \
@@ -160,4 +167,4 @@ memtest: $(TEST_BINS)
 clean:
 	rm -r build lib
 
-.PHONY: all cli sdist dist install uninstall clean test memtest
+.PHONY: all cli sdist dist install install-strip uninstall clean test memtest
