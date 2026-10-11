@@ -4,7 +4,8 @@ This directory contains the policy source for the `fiorino-decrypt` domain:
 
 - `fiorino_decrypt.te` — type-enforcement rules;
 - `fiorino_decrypt.fc` — file-context mappings;
-- `fiorino_decrypt.if` — policy interfaces.
+- `fiorino_decrypt.if` — policy interfaces;
+- `fiorino_decrypt_login.te` — caller domain and role integration.
 
 The policy labels `/usr/local/bin/fiorino-decrypt` as the executable type and
 `~/.fiorino` (including its contents) as `fiorino_vault_t`. The decrypt domain
@@ -17,11 +18,47 @@ marked permissive.
 Install the SELinux policy development tools, then run from this directory:
 
 ```bash
-make -f /usr/share/selinux/devel/Makefile fiorino_decrypt.pp
+make -f /usr/share/selinux/devel/Makefile fiorino_decrypt.pp fiorino_decrypt_login.pp
 ```
 
-This creates `fiorino_decrypt.pp`. The `.if` file is consumed by the policy
-Makefile and does not need separate compilation.
+This creates `fiorino_decrypt.pp` and `fiorino_decrypt_login.pp`. The local
+`fiorino_decrypt.if` file is consumed by the policy Makefile and does not need
+separate compilation. Build both modules from this directory so the login
+module can use the local Fiorino interface.
+
+## Run from a user shell
+
+The core policy uses the reference-policy `application_domain` interface.
+The `fiorino_decrypt_run(domain, role)` interface grants an automatic transition
+through `fiorino_decrypt_exec_t` and allows `fiorino_decrypt_t` under the supplied
+role. The separate login module calls it for `unconfined_t` and `unconfined_r`;
+it does not make the decrypt domain unconfined.
+
+Check `id -Z` before building. If your login uses another domain and role,
+replace both names in `fiorino_decrypt_login.te`, including its `gen_require`
+block. This interface targets reference-policy-based systems; SELinux policy
+interfaces and caller types are not universal across distributions. Build
+against the target system's policy development headers.
+
+Installing only the core module does not enable the user-shell transition.
+Install both modules and restore the executable's label as shown below.
+Execute `/usr/local/bin/fiorino-decrypt` normally; no `sudo` or `runcon` is
+needed. While it waits at the password prompt, check from another terminal:
+
+```bash
+ps -eZ | grep '[f]iorino-decrypt'
+getenforce
+```
+
+The process type should be `fiorino_decrypt_t`; with the supplied login module,
+the role remains `unconfined_r`. The type governs its confined permissions.
+`getenforce` should report `Enforcing` for enforcement tests.
+
+If a confined invocation fails, inspect recent denials before adding permissions:
+
+```bash
+sudo ausearch -m AVC,USER_AVC -ts recent -c fiorino-decrypt
+```
 
 ## Generate the manual page
 
@@ -38,7 +75,7 @@ man ./fiorino_decrypt_selinux.8
 ## Install and label the policy
 
 ```bash
-sudo semodule -X 400 -i fiorino_decrypt.pp
+sudo semodule -X 400 -i fiorino_decrypt.pp fiorino_decrypt_login.pp
 sudo restorecon -F -R -v /usr/local/bin/fiorino-decrypt
 sudo restorecon -F -R -v "$HOME/.fiorino"
 ```
@@ -74,5 +111,5 @@ for this direct module-installation workflow.
 ## Remove the policy
 
 ```bash
-sudo semodule -r fiorino_decrypt
+sudo semodule -X 400 -r fiorino_decrypt_login fiorino_decrypt
 ```

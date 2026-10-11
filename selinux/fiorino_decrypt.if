@@ -38,3 +38,23 @@ interface(`fiorino_decrypt_exec',`
 	corecmd_search_bin($1)
 	can_exec($1, fiorino_decrypt_exec_t)
 ')
+
+########################################
+## <summary>
+## Execute fiorino-decrypt in its confined domain under the caller's role.
+## </summary>
+## <param name="domain">
+## <summary>Caller domain allowed to transition.</summary>
+## </param>
+## <param name="role">
+## <summary>Caller role allowed to use the decrypt domain.</summary>
+## </param>
+#
+interface(`fiorino_decrypt_run',`
+    gen_require(`
+        type fiorino_decrypt_t;
+    ')
+
+    fiorino_decrypt_domtrans($1)
+    role $2 types fiorino_decrypt_t;
+')

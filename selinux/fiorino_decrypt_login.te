@@ -1,0 +1,10 @@
+policy_module(fiorino_decrypt_login, 1.0.0)
+
+# Site integration: use the domain and role reported by id -Z.
+# Keep caller-specific types out of the core Fiorino policy.
+gen_require(`
+    type unconfined_t;
+    role unconfined_r;
+')
+
+fiorino_decrypt_run(unconfined_t, unconfined_r)

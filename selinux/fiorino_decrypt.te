@@ -9,7 +9,7 @@ type fiorino_decrypt_t;
 type fiorino_decrypt_exec_t;
 type fiorino_vault_t;
 files_type(fiorino_vault_t)
-init_daemon_domain(fiorino_decrypt_t, fiorino_decrypt_exec_t)
+application_domain(fiorino_decrypt_t, fiorino_decrypt_exec_t)
 
 ########################################
 #
@@ -19,6 +19,14 @@ allow fiorino_decrypt_t self:fifo_file rw_fifo_file_perms;
 allow fiorino_decrypt_t self:unix_stream_socket create_stream_socket_perms;
 
 domain_use_interactive_fds(fiorino_decrypt_t)
+# OpenSSL's password prompt opens /dev/tty.
+term_use_controlling_term(fiorino_decrypt_t)
+userdom_use_user_terminals(fiorino_decrypt_t)
+
+libs_use_ld_so(fiorino_decrypt_t)
+libs_use_shared_libs(fiorino_decrypt_t)
+dev_read_urand(fiorino_decrypt_t)
+logging_send_syslog_msg(fiorino_decrypt_t)
 
 files_read_etc_files(fiorino_decrypt_t)
 
