@@ -38,10 +38,29 @@ man ./fiorino_decrypt_selinux.8
 ## Install and label the policy
 
 ```bash
-sudo semodule -i fiorino_decrypt.pp
+sudo semodule -X 400 -i fiorino_decrypt.pp
 sudo restorecon -F -R -v /usr/local/bin/fiorino-decrypt
 sudo restorecon -F -R -v "$HOME/.fiorino"
 ```
+
+The vault mapping uses `HOME_DIR` with a `system_u` source context so SELinux generates it alongside
+the other home-directory mappings in `file_contexts.homedirs`. A literal
+`/home/[^/]+` rule stays in the base mappings and can be overridden by the
+generated generic `user_home_t` home-directory rule.
+
+The vault mapping deliberately omits the file-type field so it matches both
+`~/.fiorino` directories and their contents. A `--` field would match only
+regular files, leaving directories labeled `user_home_t`. Rebuild and reinstall
+the module after changing its file-context mappings, then run `restorecon`.
+
+Check the expected and actual vault directory labels:
+
+```bash
+matchpathcon "$HOME/.fiorino" "$HOME/.fiorino/default"
+ls -Zd "$HOME/.fiorino" "$HOME/.fiorino/default"
+```
+
+Both should show type `fiorino_vault_t` for existing matching paths.
 
 Check that the module is loaded:
 
