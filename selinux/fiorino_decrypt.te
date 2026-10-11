@@ -7,9 +7,9 @@ policy_module(fiorino_decrypt, 1.0.0)
 
 type fiorino_decrypt_t;
 type fiorino_decrypt_exec_t;
+type fiorino_vault_t;
+files_type(fiorino_vault_t)
 init_daemon_domain(fiorino_decrypt_t, fiorino_decrypt_exec_t)
-
-permissive fiorino_decrypt_t;
 
 ########################################
 #
@@ -21,5 +21,8 @@ allow fiorino_decrypt_t self:unix_stream_socket create_stream_socket_perms;
 domain_use_interactive_fds(fiorino_decrypt_t)
 
 files_read_etc_files(fiorino_decrypt_t)
+
+manage_dirs_pattern(fiorino_decrypt_t, fiorino_vault_t, fiorino_vault_t)
+manage_files_pattern(fiorino_decrypt_t, fiorino_vault_t, fiorino_vault_t)
 
 miscfiles_read_localization(fiorino_decrypt_t)

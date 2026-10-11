@@ -6,6 +6,11 @@ This directory contains the policy source for the `fiorino-decrypt` domain:
 - `fiorino_decrypt.fc` — file-context mappings;
 - `fiorino_decrypt.if` — policy interfaces.
 
+The policy labels `/usr/local/bin/fiorino-decrypt` as the executable type and
+`~/.fiorino` (including its contents) as `fiorino_vault_t`. The decrypt domain
+can manage files in that vault type. The domain is enforcing; it is not marked
+permissive.
+
 ## Build the policy module
 
 Install the SELinux policy development tools, then run from this directory:
@@ -34,6 +39,7 @@ man ./fiorino_decrypt_selinux.8
 ```bash
 sudo semodule -i fiorino_decrypt.pp
 sudo restorecon -F -R -v /usr/local/bin/fiorino-decrypt
+sudo restorecon -F -R -v "$HOME/.fiorino"
 ```
 
 Check that the module is loaded:
