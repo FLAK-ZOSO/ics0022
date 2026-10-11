@@ -25,4 +25,8 @@ files_read_etc_files(fiorino_decrypt_t)
 manage_dirs_pattern(fiorino_decrypt_t, fiorino_vault_t, fiorino_vault_t)
 manage_files_pattern(fiorino_decrypt_t, fiorino_vault_t, fiorino_vault_t)
 
+# Restored plaintext may be written only below the user's home directory.
+userdom_manage_user_home_content_dirs(fiorino_decrypt_t)
+userdom_manage_user_home_content_files(fiorino_decrypt_t)
+
 miscfiles_read_localization(fiorino_decrypt_t)

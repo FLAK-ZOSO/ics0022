@@ -8,8 +8,9 @@ This directory contains the policy source for the `fiorino-decrypt` domain:
 
 The policy labels `/usr/local/bin/fiorino-decrypt` as the executable type and
 `~/.fiorino` (including its contents) as `fiorino_vault_t`. The decrypt domain
-can manage files in that vault type. The domain is enforcing; it is not marked
-permissive.
+can manage files in that vault type and can write restored plaintext only under
+SELinux-labeled user-home directories. The domain is enforcing; it is not
+marked permissive.
 
 ## Build the policy module
 
