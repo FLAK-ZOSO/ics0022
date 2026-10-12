@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
     if (fiorino_cli_install_signal_handler(NULL) == -1) {
