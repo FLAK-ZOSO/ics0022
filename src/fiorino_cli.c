@@ -19,7 +19,7 @@ int fiorino_cli_install_signal_handler(void (*callback)(int)) {
     /// \todo We may want to use SA_SIGINFO later among .sa_flags
     sigemptyset(&saction.sa_mask);
     // https://man7.org/linux/man-pages/man7/signal.7.html
-    int signalsPosixTerm[] = { SIGALRM, SIGHUP, SIGINT, SIGPIPE, SIGTERM };
+    int signalsPosixTerm[] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM };
     for (size_t i = 0; i < sizeof signalsPosixTerm / sizeof signalsPosixTerm[0]; i++) {
         // https://pubs.opengroup.org/onlinepubs/009695399/functions/sigaction.html
         if (sigaction(signalsPosixTerm[i], &saction, NULL) == -1)
