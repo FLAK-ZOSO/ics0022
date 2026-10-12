@@ -60,6 +60,10 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file);
  * \param buffer_size Size of buffer in bytes
  * \param verify If nonzero, prompt twice and require matching entries
  * \return 0 on success, negative value on failure
+ * \note This uses OpenSSL's UI helper. During the prompt, OpenSSL may
+ *       temporarily replace process signal dispositions and restore them
+ *       afterwards. A signal received during that interval can therefore
+ *       appear only as a password-read failure to the CLI.
  */
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify);
 
