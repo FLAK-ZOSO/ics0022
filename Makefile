@@ -86,17 +86,20 @@ lib/libfiorino.so: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_
 lib/fiorino.a: build/fiorino.o build/encrypt.o build/bundle.o build/fiorino_log.o | lib
 	ar rcs $@ $^
 
+build/fiorino_cli.o: src/fiorino_cli.c src/fiorino_cli.h
+	$(CC) $(CCFLAGS) -c -o $@ $<
+
 build/fiorino-decrypt.o: src/fiorino-decrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o
+build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o build/fiorino_cli.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o -L$(CURDIR)/lib \
 		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o
+build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o build/fiorino_cli.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o -L$(CURDIR)/lib \
 		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
 
