@@ -1,10 +1,16 @@
 #include <fiorino.h>
 #include <fiorino_log.h>
+#include <fiorino_cli.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 int main(int argc, char** argv) {
+    if (fiorino_cli_install_signal_handler(NULL) == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING, "could not install", "signal handlers");
+        fprintf(stderr, "Warning: could not install signal handlers");
+        return EXIT_FAILURE;
+    }
     int opt;
     const char* vault = "default";
     char* filename = NULL;
