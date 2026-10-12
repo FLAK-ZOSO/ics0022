@@ -39,16 +39,17 @@ int main(int argc, char** argv) {
 
     char passphrase[100] = {0};
     fiorino_log_set_threshold(FIORINO_LOG_INFO);
-    if (fiorino_read_password(passphrase, sizeof passphrase, 1) < 0) {
-        fprintf(stderr, "Could not read password, aborting.\n");
-        return EXIT_FAILURE;
-    }
+    int password_result = fiorino_read_password(passphrase, sizeof passphrase, 1);
     if (fiorino_cli_raised()) {
         fiorino_cleanse(passphrase, sizeof passphrase);
         int signo = fiorino_cli_signo();
         fiorino_log_message(FIORINO_LOG_INFO, "received signal %d, aborting", signo);
         fprintf(stderr, "Interrupted by %s, safely aborting.", strsignal(signo));
         return 128 + signo;
+    }
+    if (password_result < 0) {
+        fprintf(stderr, "Could not read password, aborting.\n");
+        return EXIT_FAILURE;
     }
 
     struct Vault vault_ = {
