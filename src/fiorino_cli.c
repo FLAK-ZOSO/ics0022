@@ -20,7 +20,7 @@ int fiorino_cli_install_signal_handler(void (*callback)(int)) {
     sigemptyset(&saction.sa_mask);
     // https://man7.org/linux/man-pages/man7/signal.7.html
     int signalsPosixTerm[] = { SIGALRM, SIGHUP, SIGINT, SIGPIPE, SIGTERM };
-    for (int i = 0; i < sizeof signalsPosixTerm; i++) {
+    for (size_t i = 0; i < sizeof signalsPosixTerm; i++) {
         // https://pubs.opengroup.org/onlinepubs/009695399/functions/sigaction.html
         if (sigaction(signalsPosixTerm[i], &saction, NULL) == -1)
             return -1;
