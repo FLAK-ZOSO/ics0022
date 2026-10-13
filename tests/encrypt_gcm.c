@@ -19,26 +19,26 @@ static void check(const unsigned char *message, int message_len) {
     unsigned char tag[FIORINO_GCM_TAG_SIZE] = {0};
     unsigned char decrypted[64] = {0};
 
-    int encrypted_len = encrypt(message, message_len, key, iv, encrypted, tag);
+    int encrypted_len = fiorino_encrypt_gcm(message, message_len, key, iv, encrypted, tag);
     assert(encrypted_len == message_len);
-    assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == message_len);
+    assert(fiorino_decrypt_gcm(encrypted, encrypted_len, tag, key, iv, decrypted) == message_len);
     assert(memcmp(decrypted, message, (size_t)message_len) == 0);
 
     tag[FIORINO_GCM_TAG_SIZE - 1] ^= 1;
-    assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
+    assert(fiorino_decrypt_gcm(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
     assert(last_priority == (LOG_USER | LOG_WARNING));
     tag[FIORINO_GCM_TAG_SIZE - 1] ^= 1;
     if (message_len > 0) {
         encrypted[0] ^= 1;
-        assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
+        assert(fiorino_decrypt_gcm(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
         encrypted[0] ^= 1;
     }
     iv[0] ^= 1;
-    assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
+    assert(fiorino_decrypt_gcm(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
     iv[0] ^= 1;
     key[0] ^= 1;
-    assert(decrypt(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
-    assert(decrypt(encrypted, -1, tag, key, iv, decrypted) == -1);
+    assert(fiorino_decrypt_gcm(encrypted, encrypted_len, tag, key, iv, decrypted) == -1);
+    assert(fiorino_decrypt_gcm(encrypted, -1, tag, key, iv, decrypted) == -1);
 }
 
 int main(void) {

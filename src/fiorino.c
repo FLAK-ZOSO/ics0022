@@ -641,7 +641,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
         fiorino_log_message(FIORINO_LOG_ERROR, "could not generate encryption IV");
         result = 2; goto cleanup_encrypt;
     }
-    int encryptrc = encrypt(contents, fsize, key, iv, ciphertext, tag);
+    int encryptrc = fiorino_encrypt_gcm(contents, fsize, key, iv, ciphertext, tag);
     if (encryptrc < 0) {
         result = 2; goto cleanup_encrypt;
     }
@@ -780,7 +780,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate", "plaintext output buffer");
         goto cleanup_decrypt;
     }
-    int decryptrc = decrypt(
+    int decryptrc = fiorino_decrypt_gcm(
         bundle->ciphertext, bundle->ciphertext_len, bundle->tag,
         key, bundle->iv, plaintext
     );

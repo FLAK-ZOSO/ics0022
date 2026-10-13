@@ -10,7 +10,7 @@
  *       FIORINO_GCM_TAG_SIZE bytes.
  * \return Ciphertext length, or -1 on failure.
  */
-int encrypt(const unsigned char *plaintext, int plaintext_len,
+int fiorino_encrypt_gcm(const unsigned char *plaintext, int plaintext_len,
             const unsigned char *key, const unsigned char *iv,
             unsigned char *ciphertext,
             unsigned char tag[FIORINO_GCM_TAG_SIZE]);
@@ -21,7 +21,7 @@ int encrypt(const unsigned char *plaintext, int plaintext_len,
  *          plaintext before tag verification finishes.
  * \return Plaintext length, or -1 on failure (including invalid tag).
  */
-int decrypt(const unsigned char *ciphertext, int ciphertext_len,
+int fiorino_decrypt_gcm(const unsigned char *ciphertext, int ciphertext_len,
             const unsigned char tag[FIORINO_GCM_TAG_SIZE],
             const unsigned char *key, const unsigned char *iv,
             unsigned char *plaintext);
