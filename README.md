@@ -70,7 +70,7 @@ Decrypt a vault file into the current directory. The password is entered once:
 ```
 
 > [!WARNING]
-> Don't rely on neither return codes nor behaviour to reflect received signals, as calls to OpenSSL and other libraries can overwrite the fiorino CLI handlers.
+> Don't rely on either return codes or behaviour to reflect received signals, as calls to OpenSSL and other libraries can overwrite the fiorino CLI handlers.
 
 Run the test suite with:
 

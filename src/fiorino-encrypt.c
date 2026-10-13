@@ -69,13 +69,6 @@ int main(int argc, char** argv) {
     };
 
     int encrypt_result = fiorino_encrypt_stream(&vault_, &file_);
-    if (fiorino_cli_raised()) {
-        fiorino_cleanse(passphrase, sizeof passphrase);
-        int signo = fiorino_cli_signo();
-        fiorino_log_message(FIORINO_LOG_INFO, "received signal %d, aborting", signo);
-        fprintf(stderr, "Interrupted by %s, safely aborting.", strsignal(signo));
-        return 128 + signo;
-    }
     if (encrypt_result != 0) {
         fiorino_cleanse(passphrase, sizeof passphrase);
         if (encrypt_result == FIORINO_AUTHENTICATION_FAILED)
