@@ -90,5 +90,16 @@ int main(int argc, char** argv) {
     fiorino_cleanse(passphrase, sizeof passphrase);
     printf("Your file has been encrypted successfully to the vault '%s' as '%s'\n",
             vault, filename);
+    int output_failed = 0;
+    if (fflush(stdout) == EOF || ferror(stdout))
+        output_failed = 1;
+    if (fflush(stderr) == EOF || ferror(stderr))
+        output_failed = 1;
+
+    if (fiorino_cli_raised())
+        return 128 + fiorino_cli_signo();
+    if (output_failed)
+        return EXIT_FAILURE;
+
     return EXIT_SUCCESS;
 }
