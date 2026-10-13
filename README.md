@@ -69,6 +69,9 @@ Decrypt a vault file into the current directory. The password is entered once:
 ./build/fiorino-decrypt -v default -f file.txt
 ```
 
+> [!WARNING]
+> Don't rely on either return codes or behaviour to reflect received signals, as calls to OpenSSL and other libraries can overwrite the fiorino CLI handlers.
+
 Run the test suite with:
 
 ```bash
