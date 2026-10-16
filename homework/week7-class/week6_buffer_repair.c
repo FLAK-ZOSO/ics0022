@@ -103,6 +103,10 @@ bool board_append(struct Board *board, int index, const char *suffix)
         return false;
     }
 
+    if (index >= board->used) {
+        return false;
+    }
+
     strcat(board->notes[index].text, suffix);
     return true;
 }
