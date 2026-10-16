@@ -99,11 +99,7 @@ bool board_import(struct Board *board, const unsigned char *packet,
  */
 bool board_append(struct Board *board, int index, const char *suffix)
 {
-    if (index > (int)board->used || strlen(suffix) >= TEXT_CAP) {
-        return false;
-    }
-
-    if (index >= board->used) {
+    if (index >= (int)board->used || strlen(suffix) >= TEXT_CAP) {
         return false;
     }
 
