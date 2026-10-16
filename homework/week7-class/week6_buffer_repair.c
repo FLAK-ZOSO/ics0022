@@ -146,7 +146,7 @@ bool board_format(const struct Board *board, int index,
     }
 
     const struct Note *note = &board->notes[index];
-    int written = snprintf(out, strlen(out), "%s: %s", note->name, note->text);
+    int written = snprintf(out, capacity, "%s: %s", note->name, note->text);
     return written >= 0;
 }
 
