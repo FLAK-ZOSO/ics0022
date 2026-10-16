@@ -65,6 +65,9 @@ bool board_import(struct Board *board, const unsigned char *packet,
     if (name_len == 0 || text_len == 0) {
         return false;
     }
+    if (packet_len > 2 + name_len + text_len) {
+        return false;
+    }
 
     if (board->used > BOARD_MAX || name_len > NAME_CAP || text_len > TEXT_CAP) {
         return false;
