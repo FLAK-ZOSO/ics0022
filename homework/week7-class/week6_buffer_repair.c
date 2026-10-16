@@ -62,6 +62,9 @@ bool board_import(struct Board *board, const unsigned char *packet,
 {
     size_t name_len = packet[0];
     size_t text_len = packet[1];
+    if (name_len == 0 || text_len == 0) {
+        return false;
+    }
 
     if (board->used > BOARD_MAX || name_len > NAME_CAP || text_len > TEXT_CAP) {
         return false;
@@ -140,7 +143,7 @@ bool board_format(const struct Board *board, int index,
     }
 
     const struct Note *note = &board->notes[index];
-    int written = snprintf(out, sizeof out, "%s: %s", note->name, note->text);
+    int written = snprintf(out, strlen(out), "%s: %s", note->name, note->text);
     return written >= 0;
 }
 
