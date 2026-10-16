@@ -1,0 +1,4 @@
+| 1. What is a buffer? If `char text[8]` must contain a C string, how many ordinary characters can it hold safely? | L 4-7 |
+| 2. For the string `"CAT"`, why is strlen() 3 while four bytes are needed to store the complete string? What is `\0`? | L 4, 17 |
+| 3. Does `char dst[8]; strcpy(dst, "12345678");` fit? Identify the extra byte rather than just saying the input is too long. | L 4-6, 30-33 |
+| 4. With `char dst[8]; unsigned char src[12] = {0};`, is `memcpy(dst, src, sizeof src)` safe simply because it supplies a length? | L 28, 36, 38 |

@@ -1,0 +1,4 @@
+| 9. Why compile with -g when using GDB, and what does a breakpoint let you observe? | G 2-9 |
+| 10. Execution is paused on a source line that calls helper(). What is the difference between next and step? | G 10-12 |
+| 11. What do stack canaries, ASLR, and NX/DEP each try to achieve? Do they make an incorrect buffer copy correct? | L 37-42; R 2 |
+| 12. A long input produces no crash. Is that proof that a program is memory-safe? What evidence would you inspect? | L 6-7, 12; G 12-13, 15 |

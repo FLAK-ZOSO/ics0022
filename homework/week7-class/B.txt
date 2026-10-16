@@ -1,0 +1,4 @@
+| 5. What is a stack frame, and what information does a saved return address contain? | L 8-15; R 1-2 |
+| 6. What do RSP, RBP, and RIP describe? What are their 32-bit counterparts? | Stack pointer, frame pointer when used, and instruction pointer; ESP, EBP, and EIP. | R 1-2 |
+| 7. A char array starts at address 0x1000. Where is element 1? Does a downward-growing x86 stack mean an ordinary forward copy writes toward lower addresses? | L 10-18; R 1-2 |
+| 8. Given `char buffer[16]; char *p = buffer;`, what are sizeof buffer and sizeof p on this target? Can sizeof p reveal the buffer capacity? | G 19-21; C language reminder |

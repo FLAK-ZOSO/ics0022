@@ -1,0 +1,8 @@
+gcc -std=c11 -g -O0 -Wall -Wextra week6_buffer_repair.c -o lab
+./lab
+
+gcc -std=c11 -g -O0 -Wall -Wextra week6_buffer_solution.c -o solution
+./solution
+
+gcc -std=c11 -g -O0 -Wall -Wextra -fno-omit-frame-pointer student/role_demo.c -o role_demo
+./role_demo Ada
