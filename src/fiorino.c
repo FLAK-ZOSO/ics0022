@@ -614,7 +614,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup_output_name(file->name)) return 1;
 
     long long fsize;
-    int* file_locked = 0;
+    int file_locked = 0;
     if (runtime_setup_plaintext_file(file->file, &fsize, &file_locked)) return 1;
     size_t contents_len = (size_t)fsize + 1;
     unsigned char* contents = malloc(contents_len);
