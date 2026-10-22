@@ -648,6 +648,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
                                 "could not read complete plaintext");
             goto cleanup_encrypt;
         }
+        total_read += current_read;
         // if (current_read == ufsize - total_read) {
         //     break;
         // }
