@@ -712,6 +712,11 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
                         vault->vault, file->name);
 
 cleanup_encrypt:
+    if (file_locked && flock(fileno(file->file), LOCK_UN) == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not unlock file descriptor", "plaintext stream");
+        result = result ? result : 1;
+    }
     if (key != NULL) {
         OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
         free(key);
