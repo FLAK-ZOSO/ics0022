@@ -44,6 +44,9 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \note The caller is responsible for the allocation of the vault and members
  * \note The caller is responsible for closing the file
  * \note It overwrites pre-existing files, as a file manager should
+ * \note The supplied stream (file->file) must be a seekable regular file
+ *       whose ownership belongs to the caller, but whose locking and unlocking
+ *       is handled by the library.
  * \note On an OpenSSL failure, call ERR_get_error
  * \see https://docs.openssl.org/3.5/man3/ERR_get_error/
  * \todo Check all possible failures (fopen, file_size, fread, even malloc?)
