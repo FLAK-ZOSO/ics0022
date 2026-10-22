@@ -28,9 +28,6 @@
 ### Obvious
 
 - secure deletion
-- signal handling
-- logging should also have usage trails, not exclusively errors/warnings
-- file/stream size/read limits
 - complete access-control review
 - atomic replacement
 - final validation tests
