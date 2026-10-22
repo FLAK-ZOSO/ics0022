@@ -382,6 +382,8 @@ fail:
     if (*locked && flock(fd, LOCK_UN) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not unlock file descriptor", "plaintext stream");
+    } else {
+        *locked = 0;
     }
     return 1;
 }
