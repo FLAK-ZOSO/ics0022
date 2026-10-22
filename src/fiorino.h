@@ -43,6 +43,8 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \param file Open plaintext stream and an independent encrypted output name
  * \note The caller is responsible for the allocation of the vault and members
  * \note The caller is responsible for closing the file
+ * \note The stream must refer to a seekable regular file. Fiorino rewinds and
+ *       reads it to EOF under a shared advisory lock; the caller still owns it.
  * \note It overwrites pre-existing files, as a file manager should
  * \note On an OpenSSL failure, call ERR_get_error
  * \see https://docs.openssl.org/3.5/man3/ERR_get_error/

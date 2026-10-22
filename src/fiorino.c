@@ -337,37 +337,52 @@ int runtime_setup_output_name(const char* name) {
  * \retval 0 success
  * \retval 1 failure
  */
-int runtime_setup_plaintext_file(FILE* input, long long* size) {
-    if (input == NULL || size == NULL) {
+int runtime_setup_plaintext_file(FILE* input, long long* size, int* locked) {
+    if (input == NULL || size == NULL || locked == NULL) {
         fiorino_log_message(FIORINO_LOG_WARNING, "missing plaintext stream or size output");
         return 1;
     }
+    *locked = 0;
     int fd = fileno(input);
     struct stat st;
     if (fd < 0) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not retrieve open file descriptor", "plaintext stream");
         return 1;
+    } else if (flock(fd, LOCK_SH) == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not lock plaintext stream", "plaintext stream");
+        return 1;
+    }
+    *locked = 1;
+    if (fstat(fd, &st) == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not retrieve plaintext statistics", "plaintext stream");
+        goto fail;
+    } else if (!S_ISREG(st.st_mode)) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext stream is not a regular file");
+        goto fail;
+    } else if (st.st_size < 0) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext stream has an invalid size");
+        goto fail;
+    } else if (st.st_size > FIORINO_MAX_FILE_SIZE) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext file exceeds the size limit");
+        goto fail;
     } else if (fseek(input, 0, SEEK_SET) != 0) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not rewind plaintext stream", "plaintext stream");
-        return 1;
-    } else if (fstat(fd, &st) == -1) {
-        fiorino_log_errno(FIORINO_LOG_WARNING,
-                          "could not retrieve plaintext statistics", "plaintext stream");
-        return 1;
-    } else if (!S_ISREG(st.st_mode)) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext stream is not a regular file");
-        return 1;
-    } else if (st.st_size < 0) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext stream has an invalid size");
-        return 1;
-    } else if (st.st_size > FIORINO_MAX_FILE_SIZE) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "plaintext file exceeds the size limit");
-        return 1;
+        goto fail;
     }
     *size = st.st_size;
     return 0;
+
+fail:
+    if (flock(fd, LOCK_UN) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not unlock plaintext stream", "plaintext stream");
+    }
+    *locked = 0;
+    return 1;
 }
 
 static char* output_path(const char* root, const char* vault,
@@ -591,7 +606,8 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     if (runtime_setup_output_name(file->name)) return 1;
 
     long long fsize;
-    if (runtime_setup_plaintext_file(file->file, &fsize)) return 1;
+    int plaintext_locked = 0;
+    if (runtime_setup_plaintext_file(file->file, &fsize, &plaintext_locked)) return 1;
     size_t contents_len = (size_t)fsize + 1;
     unsigned char* contents = malloc(contents_len);
     unsigned char* ciphertext = malloc(contents_len);
@@ -609,8 +625,24 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate", "encryption buffers");
         goto cleanup_encrypt;
     }
-    if (fread(contents, 1, (size_t)fsize, file->file) != (size_t)fsize) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not read complete plaintext");
+    size_t read_total = 0;
+    while (read_total < (size_t)fsize) {
+        size_t n = fread(contents + read_total, 1,
+                         (size_t)fsize - read_total, file->file);
+        read_total += n;
+        if (n == 0) {
+            fiorino_log_message(FIORINO_LOG_ERROR,
+                                "could not read complete plaintext");
+            goto cleanup_encrypt;
+        }
+    }
+    if (fgetc(file->file) != EOF) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "plaintext file grew beyond its measured size");
+        goto cleanup_encrypt;
+    }
+    if (ferror(file->file)) {
+        fiorino_log_message(FIORINO_LOG_ERROR, "error while reading plaintext");
         goto cleanup_encrypt;
     }
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
@@ -693,6 +725,11 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
                         vault->vault, file->name);
 
 cleanup_encrypt:
+    if (plaintext_locked && flock(fileno(file->file), LOCK_UN) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not unlock plaintext stream", "plaintext stream");
+        if (result == 0) result = 1;
+    }
     if (key != NULL) {
         OPENSSL_cleanse(key, FIORINO_KEY_SIZE);
         free(key);
