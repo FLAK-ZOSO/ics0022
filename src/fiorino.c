@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
 #include <sys/file.h>
 #include <string.h>
 #include <wordexp.h>
@@ -24,6 +25,9 @@
                                     + FIORINO_GCM_TAG_SIZE \
                                     + FIORINO_PBKDF2_SALT_SIZE )
 #define FIORINO_AUTH_FILENAME ".auth"
+
+_Static_assert(FIORINO_MAX_FILE_SIZE < SIZE_MAX,
+               "FIORINO_MAX_FILE_SIZE must leave room for a terminating byte");
 
 int fiorino_read_password(char *buffer, size_t buffer_size, int verify) {
     if (buffer == NULL || buffer_size == 0 || buffer_size > INT_MAX)
@@ -335,6 +339,7 @@ int runtime_setup_output_name(const char* name) {
  * \note Leaves the stream positioned at the beginning for encryption
  * \param locked Whether the underlying file is currently locked or not
  * \note The locking is performed with flock
+ * \note It will reliably fail on files larger than FIORINO_MAX_FILE_SIZE
  * \return Status code
  * \retval 0 success
  * \retval 1 failure
@@ -628,8 +633,33 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate", "encryption buffers");
         goto cleanup_encrypt;
     }
-    if (fread(contents, 1, (size_t)fsize, file->file) != (size_t)fsize) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not read complete plaintext");
+    size_t total_read = 0;
+
+    /** \warning This casting is only safe thanks to runtime_setup_plaintext_file
+     *           guaranteeing fsize <= FIORINO_MAX_FILE_SIZE and said constant
+     *           fitting within a size_t as per static assertions
+     */
+    size_t ufsize = (size_t)fsize;
+    while (total_read < ufsize) {
+        size_t current_read = fread(contents + total_read,
+                                    1, ufsize - total_read, file->file);
+        if (current_read == 0) {
+            fiorino_log_message(FIORINO_LOG_ERROR,
+                                "could not read complete plaintext");
+            goto cleanup_encrypt;
+        }
+        // if (current_read == ufsize - total_read) {
+        //     break;
+        // }
+    }
+    if (total_read > ufsize || fgetc(file->file) != EOF) {
+        fiorino_log_message(FIORINO_LOG_ERROR,
+                            "the plaintext file grew beyond its measured size");
+        goto cleanup_encrypt;
+    }
+    if (ferror(file->file)) {
+        fiorino_log_message(FIORINO_LOG_ERROR,
+                            "failure while reading plaintext from file");
         goto cleanup_encrypt;
     }
     // https://docs.openssl.org/3.5/man3/RAND_bytes/
