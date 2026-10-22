@@ -356,7 +356,7 @@ int runtime_setup_plaintext_file(FILE* input, long long* size, int* locked) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not lock file descriptor", "plaintext stream");
         return 1;
-    } else if (flock(fd, LOCK_EX) == -1) {
+    } else if (flock(fd, LOCK_SH) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not rewind plaintext stream", "plaintext stream");
         return 1;
