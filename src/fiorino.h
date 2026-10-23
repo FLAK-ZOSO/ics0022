@@ -38,6 +38,17 @@ struct FileToEncrypt {
  */
 int fiorino_decrypt(struct Vault* vault, const char* file);
 
+/** \brief Destroys a file from a vault
+ * \param vault Identifier of the vault to destroy from
+ * \param file File to destroy, by basename
+ * \note The caller is responsible for the allocation of vault and filename
+ * \return Return code
+ * \retval 0 success
+ * \retval 1 failure
+ * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
+ */
+int fiorino_destroy(struct Vault* vault, const char* file);
+
 /** \brief Encrypts a file to a vault
  * \param vault The information of the vault to encrypt to
  * \param file Open plaintext stream and an independent encrypted output name

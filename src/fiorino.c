@@ -865,3 +865,48 @@ cleanup_decrypt:
 
     return result;
 }
+
+/** \brief Reports the number of hard links to the inode of the specified file
+ *  \retval -1 Failure to retrieve the information
+ *  \return The number of hard links
+ */
+nlink_t fiorino_hardlinks(const char* path) {
+    struct stat sb;
+    if (stat(path, &sb) == -1) {
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not stat the file", path);
+        return -1;
+    }
+    return sb.st_nlink;
+}
+
+int fiorino_destroy(struct Vault* vault, const char* file) {
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "deletion requested for vault '%s', file '%s'",
+                        vault->vault, file);
+    if (runtime_setup()) return 1;
+    if (runtime_setup_vault(vault)) return 1;
+    char* fullpath = runtime_setup_file(vault, file);
+    if (fullpath == NULL) return 1;
+    int result = 1;
+
+    nlink_t links = fiorino_hardlinks(fullpath);
+    if (links > 1) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "%lu hard links exist to %s, so the inode will persist",
+                            links, fullpath);
+        goto cleanup_destroy;
+    }
+
+    /// \todo implement deletion (+ destroy)
+
+    result = 0;
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "deletion succeeded for vault '%s', file '%s'",
+                        vault->vault, file);
+
+cleanup_destroy:
+    free(fullpath);
+
+    return result;
+}
