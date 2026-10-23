@@ -100,8 +100,8 @@ int vault_root_directory_exists() {
     return 0;
 }
 
-/** \brief Idempotently prepares a vault directory and authenticates its password
- * \param vault The vault to be checked
+/** \brief Creates or validates a vault directory and authenticates its password
+ * \param vault The vault to prepare and authenticate
  * \return Status code
  * \retval 0 vault is ready and authentication succeeded
  * \retval 1 setup or I/O failure
@@ -283,11 +283,11 @@ int vault_directory_exists(struct Vault* vault) {
     return auth_failed;
 }
 
-/** \brief Idempotently creates a vault directory with correct permissions
- * \param vault The vault whose user is to be checked
+/** \brief Checks whether the vault user matches the effective user
+ * \param vault The vault whose user identifier is checked
  * \return Status code
- * \retval 0 success
- * \retval 1 failure
+ * \retval 0 the vault user matches the effective user
+ * \retval 1 the vault user does not match
  */
 int vault_user_corresponds(struct Vault* vault) {
     if (vault->user != geteuid()) {
