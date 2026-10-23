@@ -173,7 +173,19 @@ test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_round
 	./build/test_cli_roundtrip
 	./build/test_cli_delete
 
-memtest: $(TEST_BINS)
+memtest:
+	@sanitized=0; \
+	for artifact in build/*.o $(TEST_BINS) $(CLI_TESTS) lib/libfiorino.so; do \
+		[ -f "$$artifact" ] || continue; \
+		if grep -aEq 'lib(asan|ubsan|tsan|msan)|__(asan|ubsan|tsan|msan)_' "$$artifact"; then \
+			sanitized=1; break; \
+		fi; \
+	done; \
+	if [ "$$sanitized" -eq 1 ]; then \
+		echo 'Sanitizer-instrumented build found; cleaning before Valgrind'; \
+		$(MAKE) clean; \
+	fi
+	$(MAKE) SANFLAGS= $(TEST_BINS)
 	@status=0; for test in $(TEST_BINS); do \
 		$(VALGRIND) $(VALGRIND_FLAGS) ./$$test || status=1; \
 	done; exit $$status

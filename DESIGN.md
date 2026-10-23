@@ -190,7 +190,7 @@ I want to link dynamically against OpenSSL as I know that realistically I won't 
 
 ## Reminders to self
 
-- maybe CodeSonar scan before submission
+- maybe CodeSonar (or was it SonarQube something?) scan before submission
 - fix possible race conditions by "memfd"
 - maybe SELinux policy?
 - use the [Fil-C compiler](https://fil-c.org/) for security testing
