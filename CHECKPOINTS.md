@@ -27,7 +27,6 @@
 
 ### Obvious
 
-- secure deletion
 - complete access-control review
 - atomic replacement
 - final validation tests
