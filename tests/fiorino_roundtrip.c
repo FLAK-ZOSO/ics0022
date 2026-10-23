@@ -115,6 +115,14 @@ int main(void) {
     assert(fiorino_decrypt(&vault, "empty") == 0);
     assert_file_equals("empty", NULL, 0);
 
+    struct Vault absent_vault = vault;
+    absent_vault.vault = "missing-list-target";
+    FILE* absent_listing = tmpfile();
+    assert(absent_listing != NULL);
+    assert(fiorino_list(&absent_vault, absent_listing) != 0);
+    assert(fclose(absent_listing) == 0);
+    assert(access(".fiorino/missing-list-target", F_OK) == -1);
+
     FILE* listing = tmpfile();
     assert(listing != NULL);
     assert(fiorino_list(&vault, listing) == 0);
