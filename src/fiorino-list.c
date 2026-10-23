@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
     char passphrase[100] = {0};
     fiorino_log_set_threshold(FIORINO_LOG_INFO);
-    int password_result = fiorino_read_password(passphrase, sizeof passphrase, 1);
+    int password_result = fiorino_read_password(passphrase, sizeof passphrase, 0);
     if (fiorino_cli_raised()) {
         fiorino_cleanse(passphrase, sizeof passphrase);
         int signo = fiorino_cli_signo();
@@ -52,9 +52,11 @@ int main(int argc, char** argv) {
     switch (list_rc) {
         case FIORINO_AUTHENTICATION_FAILED: {
             fprintf(stderr, "Authentication to the vault '%s' failed", vault);
+            break;
         }
         case 1: {
             fprintf(stderr, "Failed to list the contents of the vault '%s' failed", vault);
+            break;
         }
     }
 
