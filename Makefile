@@ -187,6 +187,6 @@ memtest: $(TEST_BINS)
 # https://www.gnu.org/software/make/manual/html_node/Standard-Targets.html
 
 clean:
-	rm -r build lib
+	rm -rf build lib
 
 .PHONY: all cli sdist dist install install-strip uninstall clean test memtest
