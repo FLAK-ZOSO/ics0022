@@ -8,6 +8,9 @@ ifeq ($(HARDEN), 1)
 		-fstack-clash-protection -fstack-protector-strong -fPIE
 	HARDEN_LIB_LD_FLAGS=-Wl,-z,relro,-z,now,-z,noexecstack
 	HARDEN_LD_FLAGS=-Wl,-z,relro,-z,now,-z,noexecstack -pie
+	LD_FLAGS_RPATH ?=
+else
+	LD_FLAGS_RPATH=-Wl,-rpath,'$$ORIGIN/../lib'
 endif
 CCFLAGS=-std=c17 -D_POSIX_C_SOURCE=200809L -DOPENSSL_API_COMPAT=0x30000000L \
 	-I./src -Wall -Wextra $(DBGFLAGS) -MMD -MP $(SANFLAGS) $(HARDEN_CFLAGS)
@@ -98,21 +101,21 @@ build/fiorino-decrypt.o: src/fiorino-decrypt.c
 
 build/fiorino-decrypt: lib/libfiorino.so build/fiorino-decrypt.o build/fiorino_cli.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-decrypt.o build/fiorino_cli.o -L$(CURDIR)/lib \
-		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
+		-lfiorino $(HARDEN_LD_FLAGS) $(LD_FLAGS_RPATH)
 
 build/fiorino-encrypt.o: src/fiorino-encrypt.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-encrypt: lib/libfiorino.so build/fiorino-encrypt.o build/fiorino_cli.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-encrypt.o build/fiorino_cli.o -L$(CURDIR)/lib \
-		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
+		-lfiorino $(HARDEN_LD_FLAGS) $(LD_FLAGS_RPATH)
 
 build/fiorino-delete.o: src/fiorino-delete.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
 build/fiorino-delete: lib/libfiorino.so build/fiorino-delete.o build/fiorino_cli.o
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-delete.o build/fiorino_cli.o -L$(CURDIR)/lib \
-		-lfiorino $(HARDEN_LD_FLAGS) -Wl,-rpath,'$$ORIGIN/../lib'
+		-lfiorino $(HARDEN_LD_FLAGS) $(LD_FLAGS_RPATH)
 
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
 	@bash tests/cli_usage.sh
