@@ -42,9 +42,12 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \param vault Identifier of the vault to destroy from
  * \param file File to destroy, by basename
  * \note The caller is responsible for the allocation of vault and filename
+ * \warning If other hard links exist to the same inode, this will be logged
+ *          but the inode will persist
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
+ * \retval 2 other hard links may exist to the same inode
  * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
  */
 int fiorino_destroy(struct Vault* vault, const char* file);
