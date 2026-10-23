@@ -17,12 +17,15 @@ for value in \
     "vault with spaces" "vault;touch /tmp/fiorino-cli-pwned"; do
     run_rejected ./build/fiorino-encrypt -v "$value"
     run_rejected ./build/fiorino-decrypt -v "$value"
+    run_rejected ./build/fiorino-delete -v "$value"
 done
 
 run_rejected ./build/fiorino-encrypt --
 run_rejected ./build/fiorino-decrypt --
+run_rejected ./build/fiorino-delete --
 run_rejected ./build/fiorino-encrypt -v
 run_rejected ./build/fiorino-decrypt -v
+run_rejected ./build/fiorino-delete -v
 
 if [[ -e /tmp/fiorino-cli-pwned ]]; then
     echo 'possible command injection detected' >&2

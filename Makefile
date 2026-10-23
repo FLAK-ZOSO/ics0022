@@ -15,7 +15,8 @@ VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-exitcode=1 --enable-debuginfod=no
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
 			build/test_fiorino_limits build/test_fiorino_roundtrip \
-			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log
+			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log \
+			build/test_cli_delete
 CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete
 CC=cc
 STRIP ?= strip
@@ -122,6 +123,10 @@ build/test_cli_fuzz: $(CLI_TESTS) tests/cli_fuzz.sh | build
 build/test_cli_roundtrip: $(CLI_TESTS) tests/cli_roundtrip.c | build
 	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ tests/cli_roundtrip.c -lutil
 
+build/test_cli_delete: $(CLI_TESTS) tests/cli_delete.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ tests/cli_delete.c -L$(CURDIR)/lib \
+		-lfiorino -lutil -Wl,-rpath,$(CURDIR)/lib
+
 build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h src/fiorino_log.c src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -U_FORTIFY_SOURCE -o $@ \
 		tests/encrypt_gcm.c src/encrypt.c src/fiorino_log.c -lcrypto
@@ -163,6 +168,7 @@ test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_round
 	./build/test_fiorino_symlink
 	./build/test_fiorino_vault_symlink
 	./build/test_cli_roundtrip
+	./build/test_cli_delete
 
 memtest: $(TEST_BINS)
 	@status=0; for test in $(TEST_BINS); do \
