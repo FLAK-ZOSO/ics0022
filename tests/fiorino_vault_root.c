@@ -18,6 +18,7 @@ static int list_vault(struct Vault* vault) {
 }
 
 int main(void) {
+    /* Listing fails when the Fiorino root directory does not exist. */
     int previous_dir = open(".", O_RDONLY | O_DIRECTORY);
     assert(previous_dir >= 0);
     char home[] = "/tmp/fiorino-vault-root-XXXXXX";
@@ -33,6 +34,7 @@ int main(void) {
     assert(list_vault(&vault) != 0);
     assert(access(".fiorino", F_OK) == -1);
 
+    /* Listing rejects a root with unsafe permissions and does not repair it. */
     assert(mkdir(".fiorino", 0755) == 0);
     assert(list_vault(&vault) != 0);
     struct stat st;
@@ -40,6 +42,7 @@ int main(void) {
     assert((st.st_mode & 07777) == 0755); /* Listing must not repair permissions. */
     assert(rmdir(".fiorino") == 0);
 
+    /* A symlink root is rejected without creating anything in its target. */
     assert(mkdir("outside", 0700) == 0);
     assert(symlink("outside", ".fiorino") == 0);
     assert(list_vault(&vault) != 0);

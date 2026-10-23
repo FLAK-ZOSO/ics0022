@@ -47,6 +47,7 @@ static int run_cli(const char *program, const char *home,
 
 int main(void)
 {
+    /* Encrypt through the CLI, remove the source, then decrypt and compare. */
     char home_template[] = "build/fiorino-cli-XXXXXX";
     char home_path[PATH_MAX];
     assert(mkdtemp(home_template) != NULL);

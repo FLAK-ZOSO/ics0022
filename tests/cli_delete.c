@@ -53,6 +53,7 @@ static void make_path(char *out, size_t size, const char *home,
 
 int main(void)
 {
+    /* Create an encrypted fixture through the public encrypt CLI. */
     char home_template[] = "build/fiorino-delete-XXXXXX";
     assert(mkdtemp(home_template) != NULL);
     char home[PATH_MAX];
@@ -81,9 +82,11 @@ int main(void)
     assert(n > 0 && (size_t)n < sizeof encrypted_path);
     assert(access(encrypted_path, F_OK) == 0);
 
+    /* Wrong password must preserve the encrypted file. */
     assert(run_cli(delete_path, home, vault_name, filename, "wrong password\n") != 0);
     assert(access(encrypted_path, F_OK) == 0);
 
+    /* A multiply-linked encrypted file is refused and remains intact. */
     char linked_path[PATH_MAX];
     make_path(linked_path, sizeof linked_path, home, "linked-copy.enc");
     assert(link(encrypted_path, linked_path) == 0);
@@ -97,6 +100,7 @@ int main(void)
     assert(access(linked_path, F_OK) == 0);
     assert(unlink(linked_path) == 0);
 
+    /* A symlink entry is refused; its outside referent survives. */
     char outside_path[PATH_MAX], symlink_path[PATH_MAX];
     make_path(outside_path, sizeof outside_path, home, "outside.txt");
     make_path(symlink_path, sizeof symlink_path, home,
@@ -112,6 +116,7 @@ int main(void)
     assert(access(symlink_path, F_OK) == 0);
     assert(unlink(symlink_path) == 0);
 
+    /* Correct password deletes the encrypted entry but keeps the source. */
     assert(run_cli(delete_path, home, vault_name, filename,
                    "correct horse\n") == 0);
     assert(access(encrypted_path, F_OK) == -1);
@@ -119,6 +124,7 @@ int main(void)
     assert(run_cli(delete_path, home, vault_name, filename,
                    "correct horse\n") != 0);
 
+    /* Deleting the same entry again fails; remove all fixture files. */
     char auth_path[PATH_MAX], vault_path[PATH_MAX], root_path[PATH_MAX];
     n = snprintf(auth_path, sizeof auth_path, "%s/.fiorino/%s/.auth",
                  home, vault_name);

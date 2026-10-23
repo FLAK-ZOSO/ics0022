@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 int main(void) {
+    /* Decryption refuses a symlink target and leaves its referent unchanged. */
     int previous_dir = open(".", O_RDONLY | O_DIRECTORY);
     assert(previous_dir >= 0);
     char home[] = "/tmp/fiorino-symlink-XXXXXX";
@@ -43,6 +44,7 @@ int main(void) {
     assert(fclose(target) == 0);
     assert(decrypt_result != 0);
 
+    /* Encryption refuses a symlink at its temporary output path. */
     assert(symlink("../../private.txt", ".fiorino/test/blocked.enc.tmp") == 0);
     source = tmpfile();
     assert(source != NULL);
@@ -56,6 +58,7 @@ int main(void) {
     assert(memcmp(actual, sentinel, sizeof sentinel) == 0);
     assert(fclose(target) == 0);
 
+    /* A regular preexisting temporary path is safely replaced and finalized. */
     assert(unlink(".fiorino/test/blocked.enc.tmp") == 0);
     target = fopen(".fiorino/test/blocked.enc.tmp", "wb");
     assert(target != NULL);

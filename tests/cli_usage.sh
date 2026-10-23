@@ -21,12 +21,15 @@ assert_failure() {
 [[ -x "$delete" ]] || { echo "missing $delete" >&2; exit 1; }
 [[ -x "$list" ]] || { echo "missing $list" >&2; exit 1; }
 
+# Encrypt/decrypt/delete require -f and reject a missing -f value.
 assert_failure "$encrypt"
 assert_failure "$decrypt"
 assert_failure "$delete"
 assert_failure "$encrypt" -f
 assert_failure "$decrypt" -f
 assert_failure "$delete" -f
+
+# Each CLI rejects unknown options; list also rejects unsupported/missing options.
 assert_failure "$encrypt" -x
 assert_failure "$decrypt" -x
 assert_failure "$delete" -x

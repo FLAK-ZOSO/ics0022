@@ -16,7 +16,8 @@ void syslog(int priority, const char* format, ...) {
 enum { HEADER_LEN = FIORINO_IV_SIZE + FIORINO_PBKDF2_SALT_SIZE,
        OVERHEAD = HEADER_LEN + FIORINO_GCM_TAG_SIZE };
 
-static void check_round_trip(size_t ciphertext_len) {
+/* Serialization layout and deserialize-owned-copy behavior for one payload size. */
+static void test_bundle_round_trip_and_copy_ownership(size_t ciphertext_len) {
     unsigned char* ciphertext = malloc(ciphertext_len ? ciphertext_len : 1);
     assert(ciphertext != NULL);
     for (size_t i = 0; i < ciphertext_len; ++i)
@@ -71,7 +72,8 @@ static void check_round_trip(size_t ciphertext_len) {
     free(restored);
 }
 
-static void check_invalid_input(void) {
+/* Reject malformed/oversized inputs and invalid serialization arguments. */
+static void test_bundle_rejects_invalid_inputs(void) {
     unsigned char small[OVERHEAD + 1] = {0};
     assert(deserialize_bundle(NULL, OVERHEAD) == NULL);
     assert(last_priority == (LOG_USER | LOG_WARNING));
@@ -107,10 +109,11 @@ static void check_invalid_input(void) {
 }
 
 int main(void) {
+    /* Empty, block-adjacent, ordinary, and maximum-sized ciphertexts. */
     const size_t lengths[] = {0, 1, 15, 16, 17, 255, 4096,
                               FIORINO_MAX_FILE_SIZE};
     for (size_t i = 0; i < sizeof lengths / sizeof lengths[0]; ++i)
-        check_round_trip(lengths[i]);
-    check_invalid_input();
+        test_bundle_round_trip_and_copy_ownership(lengths[i]);
+    test_bundle_rejects_invalid_inputs();
     return 0;
 }

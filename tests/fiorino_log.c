@@ -21,6 +21,7 @@ void syslog(int priority, const char* format, ...) {
     ++messages;
 }
 int main(void) {
+    /* Default threshold suppresses debug while retaining warning messages. */
     assert(fiorino_log_get_threshold() == FIORINO_LOG_WARNING);
     fiorino_log_message(FIORINO_LOG_DEBUG, "hidden");
     assert(messages == 0);
@@ -30,17 +31,20 @@ int main(void) {
     assert(last_priority == (LOG_USER | LOG_WARNING));
     assert(strcmp(last_message, "fiorino: file name") == 0);
 
+    /* Lowering the threshold exposes debug messages. */
     assert(fiorino_log_set_threshold(FIORINO_LOG_DEBUG) == 0);
     fiorino_log_message(FIORINO_LOG_DEBUG, "visible");
     assert(messages == 2);
     assert(last_priority == (LOG_USER | LOG_DEBUG));
 
+    /* Errno logging adds context and preserves the caller's errno value. */
     errno = ENOENT;
     fiorino_log_errno(FIORINO_LOG_ERROR, "open", "missing");
     assert(messages == 3);
     assert(strstr(last_message, "open 'missing':") != NULL);
     assert(errno == ENOENT);
 
+    /* Threshold filtering, invalid thresholds, and the fully-off setting. */
     assert(fiorino_log_set_threshold(FIORINO_LOG_ERROR) == 0);
     errno = ELOOP;
     fiorino_log_errno(FIORINO_LOG_WARNING, "open", "symlink");

@@ -12,7 +12,9 @@ void syslog(int priority, const char* format, ...) {
     last_priority = priority;
 }
 
-static void check(const unsigned char *message, int message_len) {
+/* Round trip, then reject modified tag/ciphertext/IV/key and invalid length. */
+static void test_gcm_authentication_and_round_trip(const unsigned char *message,
+                                                  int message_len) {
     unsigned char key[FIORINO_KEY_SIZE] = {0};
     unsigned char iv[FIORINO_IV_SIZE] = {0};
     unsigned char encrypted[64] = {0};
@@ -42,8 +44,9 @@ static void check(const unsigned char *message, int message_len) {
 }
 
 int main(void) {
+    /* Exercise both non-empty binary plaintext and the empty-message boundary. */
     unsigned char message[] = {0, 1, 255, 0, 42};
-    check(message, sizeof message);
-    check(message, 0);
+    test_gcm_authentication_and_round_trip(message, sizeof message);
+    test_gcm_authentication_and_round_trip(message, 0);
     return 0;
 }

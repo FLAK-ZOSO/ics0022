@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 int main(void) {
+    /* A successful encryption writes a bundle that can be deserialized. */
     char home[] = "/tmp/fiorino-cleanup-XXXXXX";
     assert(mkdtemp(home) != NULL);
     assert(setenv("HOME", home, 1) == 0);
@@ -38,6 +39,7 @@ int main(void) {
     assert(bundle != NULL && bundle->ciphertext_len == sizeof message);
     free(bundle);
 
+    /* A write failure leaves no final file and removes the temporary file. */
     source = tmpfile();
     assert(source != NULL);
     assert(fwrite(message, 1, sizeof message, source) == sizeof message);
@@ -62,6 +64,7 @@ int main(void) {
                     home) > 0);
     assert(unlink(path) == 0);
 
+    /* A rename failure preserves the existing target and removes the temp. */
     source = tmpfile();
     assert(source != NULL);
     assert(fwrite(message, 1, sizeof message, source) == sizeof message);

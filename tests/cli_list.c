@@ -70,6 +70,7 @@ static void make_path(char* out, size_t size, const char* home,
 }
 
 int main(void) {
+    /* Create an isolated HOME and a file/vault fixture for CLI list cases. */
     char home_template[] = "build/fiorino-list-XXXXXX";
     assert(mkdtemp(home_template) != NULL);
     char home[PATH_MAX];
@@ -96,6 +97,7 @@ int main(void) {
                    "correct horse\ncorrect horse\n",
                    output, sizeof output) == 0);
 
+    /* A valid password lists the logical filename without the .enc suffix. */
     char* list_args[] = { list_path, "-v", (char*)vault, NULL };
     assert(run_cli(list_path, home, list_args, "correct horse\n",
                    output, sizeof output) == 0);
@@ -103,10 +105,12 @@ int main(void) {
            strstr(output, "sample.txt\n") != NULL);
     assert(strstr(output, "sample.txt.enc") == NULL);
 
+    /* A wrong password is rejected with an authentication diagnostic. */
     assert(run_cli(list_path, home, list_args, "wrong password\n",
                    output, sizeof output) != 0);
     assert(strstr(output, "Authentication") != NULL);
 
+    /* Listing an absent vault fails and does not create that vault. */
     char* missing_args[] = { list_path, "-v", "missing-list-vault", NULL };
     assert(run_cli(list_path, home, missing_args, "correct horse\n",
                    output, sizeof output) != 0);
@@ -115,6 +119,7 @@ int main(void) {
               ".fiorino/missing-list-vault");
     assert(access(missing_path, F_OK) == -1);
 
+    /* Unknown command-line options are rejected. */
     char* bad_option_args[] = { list_path, "-x", NULL };
     assert(run_cli(list_path, home, bad_option_args, "", output,
                    sizeof output) != 0);

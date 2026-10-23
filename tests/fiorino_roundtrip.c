@@ -53,6 +53,7 @@ static void encrypt_named(struct Vault* vault, const char* name,
 }
 
 int main(void) {
+    /* Encrypt/decrypt binary data and apply the vault's private file mode. */
     int previous_dir = open(".", O_RDONLY | O_DIRECTORY);
     assert(previous_dir >= 0);
     char home[] = "/tmp/fiorino-roundtrip-XXXXXX";
@@ -70,6 +71,7 @@ int main(void) {
     assert(fiorino_decrypt(&vault, "sample") == 0);
     assert_file_equals("sample", message, sizeof message);
 
+    /* Wrong-password authentication must preserve existing plaintext. */
     const unsigned char sentinel[] = "keep this file";
     write_bytes("sample", sentinel, sizeof sentinel);
     assert(chmod("sample", 0640) == 0);
@@ -78,6 +80,7 @@ int main(void) {
     assert(fiorino_decrypt(&wrong, "sample") != 0);
     assert_file_equals("sample", sentinel, sizeof sentinel);
 
+    /* Tampering with header, ciphertext, or tag must fail without overwrite. */
     const char* bundle_path = ".fiorino/test/sample.enc";
     size_t bundle_len;
     unsigned char* original = read_bytes(bundle_path, &bundle_len);
@@ -97,6 +100,7 @@ int main(void) {
         assert_file_equals("sample", sentinel, sizeof sentinel);
     }
 
+    /* Truncated bundles fail; restoring the bundle decrypts and preserves mode. */
     write_bytes(bundle_path, original,
                 header_len + FIORINO_GCM_TAG_SIZE - 1);
     assert(fiorino_decrypt(&vault, "sample") != 0);
@@ -108,13 +112,16 @@ int main(void) {
     assert(stat("sample", &st) == 0);
     assert((st.st_mode & 0777) == 0640);
 
+    /* Missing encrypted input fails without creating plaintext output. */
     assert(fiorino_decrypt(&vault, "missing") != 0);
     assert(access("missing", F_OK) != 0);
 
+    /* Empty plaintext is supported by encryption and decryption. */
     encrypt_named(&vault, "empty", NULL, 0);
     assert(fiorino_decrypt(&vault, "empty") == 0);
     assert_file_equals("empty", NULL, 0);
 
+    /* Listing a missing vault fails without creating its directory. */
     struct Vault absent_vault = vault;
     absent_vault.vault = "missing-list-target";
     FILE* absent_listing = tmpfile();
@@ -123,6 +130,7 @@ int main(void) {
     assert(fclose(absent_listing) == 0);
     assert(access(".fiorino/missing-list-target", F_OK) == -1);
 
+    /* Existing-vault listing shows file names, not extensions or auth data. */
     FILE* listing = tmpfile();
     assert(listing != NULL);
     assert(fiorino_list(&vault, listing) == 0);
@@ -140,6 +148,7 @@ int main(void) {
         if (listed[i] == '\n') ++listed_lines;
     assert(listed_lines == 2);
 
+    /* Traversal-like output names and vault names cannot escape the vault. */
     const unsigned char outside_sentinel[] = "this file is outside the vault";
     write_bytes("outside.enc", outside_sentinel, sizeof outside_sentinel);
     FILE* traversal_source = tmpfile();

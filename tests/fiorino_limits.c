@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 int main(void) {
+    /* Reject vault and output names whose complete paths exceed PATH_MAX. */
     int previous_dir = open(".", O_RDONLY | O_DIRECTORY);
     assert(previous_dir >= 0);
     char home[] = "/tmp/fiorino-limits-XXXXXX";
@@ -44,7 +45,7 @@ int main(void) {
     assert(fiorino_encrypt_stream(&vault, &file) != 0);
     assert(fiorino_decrypt(&vault, long_output_name) != 0);
 
-    /* The open input's size limit must reject a sparse oversized file. */
+    /* Reject a sparse input whose declared size exceeds the library limit. */
     assert(ftruncate(fileno(input), FIORINO_MAX_FILE_SIZE + 1) == 0);
     file.name = "oversized";
     assert(fiorino_encrypt_stream(&vault, &file) != 0);

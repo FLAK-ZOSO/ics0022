@@ -11,6 +11,7 @@ run_rejected() {
     fi
 }
 
+# Hostile vault names: traversal, separators, empty/oversized, spaces, metacharacters.
 for value in \
     . .. ../ .../ ./../ ".\./" "%2e%2e%2f" \
     "" "/" "//" "$(printf 'x%.0s' {1..4096})" \
@@ -20,6 +21,7 @@ for value in \
     run_rejected ./build/fiorino-delete -v "$value"
 done
 
+# Malformed option terminators and options with missing values.
 run_rejected ./build/fiorino-encrypt --
 run_rejected ./build/fiorino-decrypt --
 run_rejected ./build/fiorino-delete --

@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 int main(void) {
+    /* Reject a vault symlink and verify no auth record or ciphertext escapes. */
     int previous_dir = open(".", O_RDONLY | O_DIRECTORY);
     assert(previous_dir >= 0);
     char home[] = "/tmp/fiorino-vault-symlink-XXXXXX";
@@ -24,7 +25,6 @@ int main(void) {
     assert(fwrite(plaintext, 1, sizeof plaintext, source) == sizeof plaintext);
     struct Vault vault = { geteuid(), "evil", "password" };
     struct FileToEncrypt input = { source, "payload" };
-    /* This fails on vulnerable code, which follows the vault symlink. */
     assert(fiorino_encrypt_stream(&vault, &input) != 0);
     assert(fclose(source) == 0);
     assert(access("outside/.auth", F_OK) != 0);
