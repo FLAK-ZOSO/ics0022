@@ -358,7 +358,7 @@ int runtime_setup_plaintext_file(FILE* input, long long* size, int* locked) {
         return 1;
     } else if (flock(fd, LOCK_SH) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
-                          "could not rewind plaintext stream", "plaintext stream");
+                          "could not lock plaintext stream", "plaintext stream");
         return 1;
     }
     *locked = 1;
@@ -649,9 +649,6 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
             goto cleanup_encrypt;
         }
         total_read += current_read;
-        // if (current_read == ufsize - total_read) {
-        //     break;
-        // }
     }
     if (total_read > ufsize || fgetc(file->file) != EOF) {
         fiorino_log_message(FIORINO_LOG_ERROR,
