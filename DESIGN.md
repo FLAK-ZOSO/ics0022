@@ -45,7 +45,7 @@ This category considers security at rest.
 
 Threats.
 
-- destroying the memory where the encrypted files live
+- deleting the memory where the encrypted files live
 - unintentionally overwriting an encrypted file
 - tampering with the files in their encrypted form
 
@@ -62,7 +62,7 @@ Threats.
 
 - exploitation attempt left untraceable, or accountability missing
 - logs manipulated
-- logs destroyed
+- logs deleted
 
 Safeguards.
 
@@ -154,7 +154,7 @@ fiorino decrypt -v default -f file1.txt file2.jpeg
 
 - configure a mirror
 - activate/deactivate a mirror
-- create/destroy a vault
+- create/delete a vault
 - remove a file from a vault
 - verify the configuration
 - list the files in a vault

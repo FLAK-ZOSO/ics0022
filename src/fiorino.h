@@ -39,8 +39,8 @@ struct FileToEncrypt {
 int fiorino_decrypt(struct Vault* vault, const char* file);
 
 /** \brief Destroys a file from a vault
- * \param vault Identifier of the vault to destroy from
- * \param file File to destroy, by basename
+ * \param vault Identifier of the vault to delete from
+ * \param file File to delete, by basename
  * \note The caller is responsible for the allocation of vault and filename
  * \warning If other hard links exist to the same inode, this will be logged
  *          but the inode will persist
@@ -50,7 +50,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \retval 2 other hard links may exist to the same inode
  * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
  */
-int fiorino_destroy(struct Vault* vault, const char* file);
+int fiorino_delete(struct Vault* vault, const char* file);
 
 /** \brief Encrypts a file to a vault
  * \param vault The information of the vault to encrypt to

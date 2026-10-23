@@ -881,7 +881,7 @@ nlink_t fiorino_hardlinks(const char* path) {
     return sb.st_nlink;
 }
 
-int fiorino_destroy(struct Vault* vault, const char* file) {
+int fiorino_delete(struct Vault* vault, const char* file) {
     fiorino_log_message(FIORINO_LOG_INFO,
                         "deletion requested for vault '%s', file '%s'",
                         vault->vault, file);
@@ -896,15 +896,15 @@ int fiorino_destroy(struct Vault* vault, const char* file) {
         fiorino_log_message(FIORINO_LOG_WARNING,
                             "%lu hard links exist to %s, so the inode will persist",
                             links, fullpath);
-        goto cleanup_destroy;
+        goto cleanup_delete;
     }
 
-    /// \todo destroy/shred the content
+    /// \todo delete/shred the content
     if (unlink(fullpath) == -1) {
         fiorino_log_errno(FIORINO_LOG_ERROR,
                           "could not unlink %s",
                           fullpath);
-        goto cleanup_destroy;
+        goto cleanup_delete;
     }
 
     result = 0;
@@ -912,7 +912,7 @@ int fiorino_destroy(struct Vault* vault, const char* file) {
                         "deletion succeeded for vault '%s', file '%s'",
                         vault->vault, file);
 
-cleanup_destroy:
+cleanup_delete:
     free(fullpath);
 
     return result;
