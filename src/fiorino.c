@@ -362,7 +362,11 @@ int runtime_setup_plaintext_file(FILE* input, long long* size, int* locked) {
         return 1;
     }
     *locked = 1;
-    if (fstat(fd, &st) == -1) {
+    if (fseek(input, 0, SEEK_SET) != 0) {
+        fiorino_log_errno(FIORINO_LOG_WARNING,
+                          "could not rewind plaintext stream", "plaintext stream");
+        goto fail;
+    } else if (fstat(fd, &st) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
                           "could not retrieve plaintext statistics", "plaintext stream");
         goto fail;
@@ -374,10 +378,6 @@ int runtime_setup_plaintext_file(FILE* input, long long* size, int* locked) {
         goto fail;
     } else if (st.st_size > FIORINO_MAX_FILE_SIZE) {
         fiorino_log_message(FIORINO_LOG_WARNING, "plaintext file exceeds the size limit");
-        goto fail;
-    } else if (fseek(input, 0, SEEK_SET) != 0) {
-        fiorino_log_errno(FIORINO_LOG_WARNING,
-                          "could not rewind plaintext stream", "plaintext stream");
         goto fail;
     }
     *size = st.st_size;
