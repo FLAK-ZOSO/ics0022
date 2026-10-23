@@ -115,6 +115,29 @@ int main(void) {
     assert(fiorino_decrypt(&vault, "empty") == 0);
     assert_file_equals("empty", NULL, 0);
 
+    FILE* listing = tmpfile();
+    assert(listing != NULL);
+    assert(fflush(stdout) == 0);
+    int saved_stdout = dup(STDOUT_FILENO);
+    assert(saved_stdout >= 0);
+    assert(dup2(fileno(listing), STDOUT_FILENO) >= 0);
+    assert(fiorino_list(&vault) == 0);
+    assert(fflush(stdout) == 0);
+    assert(dup2(saved_stdout, STDOUT_FILENO) >= 0);
+    assert(close(saved_stdout) == 0);
+    assert(fseek(listing, 0, SEEK_SET) == 0);
+    char listed[128] = {0};
+    size_t listed_len = fread(listed, 1, sizeof listed - 1, listing);
+    assert(fclose(listing) == 0);
+    assert(listed_len > 0);
+    assert(strstr(listed, "sample\n") != NULL);
+    assert(strstr(listed, "empty\n") != NULL);
+    assert(strstr(listed, ".auth") == NULL);
+    size_t listed_lines = 0;
+    for (size_t i = 0; i < listed_len; ++i)
+        if (listed[i] == '\n') ++listed_lines;
+    assert(listed_lines == 2);
+
     const unsigned char outside_sentinel[] = "this file is outside the vault";
     write_bytes("outside.enc", outside_sentinel, sizeof outside_sentinel);
     FILE* traversal_source = tmpfile();
