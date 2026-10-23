@@ -951,3 +951,68 @@ cleanup_delete:
 
     return result;
 }
+
+int fiorino_list(struct Vault* vault) {
+    fiorino_log_message(FIORINO_LOG_INFO,
+                        "listing requested for vault '%s'",
+                        vault->vault);
+    if (runtime_setup()) return 1;
+    if (runtime_setup_vault(vault)) return 1;
+    char* directory = build_vault_path(vault->vault);
+    if (directory == NULL) return 1;
+
+    DIR* dir = opendir(directory);
+    if (dir == NULL) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not open vault directory", directory);
+        free(directory);
+        return 1;
+    }
+
+    int result = 0;
+    struct dirent* entry;
+    for (;;) {
+        errno = 0;
+        entry = readdir(dir);
+        if (entry == NULL) {
+            if (errno != 0) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not read vault directory", directory);
+                result = 1;
+            }
+            break;
+        }
+        size_t name_len = strlen(entry->d_name);
+        if (name_len <= 4 || strcmp(entry->d_name + name_len - 4, ".enc") != 0)
+            continue;
+
+        struct stat st;
+        if (fstatat(dirfd(dir), entry->d_name, &st, AT_SYMLINK_NOFOLLOW) == -1) {
+            fiorino_log_errno(FIORINO_LOG_WARNING,
+                              "could not inspect vault entry", entry->d_name);
+            result = 1;
+            continue;
+        }
+        if (!S_ISREG(st.st_mode)) continue;
+
+        if (fwrite(entry->d_name, 1, name_len - 4, stdout) != name_len - 4 ||
+            fputc('\n', stdout) == EOF) {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not write vault listing", "standard output");
+            result = 1;
+            break;
+        }
+    }
+    if (closedir(dir) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not close vault directory", directory);
+        result = 1;
+    }
+    free(directory);
+
+    if (result == 0) {
+        fiorino_log_message(FIORINO_LOG_INFO,
+                            "listing succeeded for vault '%s'", vault->vault);
+    }
+    return result;
+}
