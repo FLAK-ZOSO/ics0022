@@ -74,14 +74,15 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file);
 
 /** \brief Lists the files within a vault
  * \param vault Identifier of the vault
+ * \param output Stream to receive one plaintext basename per line
  * \note The caller is responsible for the allocation of the vault
- * \note Writes one plaintext basename per line to standard output.
+ * \note The caller is responsible for keeping the output stream open.
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
  * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
  */
-int fiorino_list(struct Vault* vault);
+int fiorino_list(struct Vault* vault, FILE* output);
 
 /** \brief Read a passphrase without echoing it on the terminal.
  * \param buffer Destination buffer, including space for the terminating NUL

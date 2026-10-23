@@ -117,14 +117,8 @@ int main(void) {
 
     FILE* listing = tmpfile();
     assert(listing != NULL);
-    assert(fflush(stdout) == 0);
-    int saved_stdout = dup(STDOUT_FILENO);
-    assert(saved_stdout >= 0);
-    assert(dup2(fileno(listing), STDOUT_FILENO) >= 0);
-    assert(fiorino_list(&vault) == 0);
-    assert(fflush(stdout) == 0);
-    assert(dup2(saved_stdout, STDOUT_FILENO) >= 0);
-    assert(close(saved_stdout) == 0);
+    assert(fiorino_list(&vault, listing) == 0);
+    assert(fflush(listing) == 0);
     assert(fseek(listing, 0, SEEK_SET) == 0);
     char listed[128] = {0};
     size_t listed_len = fread(listed, 1, sizeof listed - 1, listing);

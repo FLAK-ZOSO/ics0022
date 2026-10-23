@@ -952,7 +952,12 @@ cleanup_delete:
     return result;
 }
 
-int fiorino_list(struct Vault* vault) {
+int fiorino_list(struct Vault* vault, FILE* output) {
+    if (output == NULL) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "cannot list vault to a null output stream");
+        return 1;
+    }
     fiorino_log_message(FIORINO_LOG_INFO,
                         "listing requested for vault '%s'",
                         vault->vault);
@@ -970,6 +975,8 @@ int fiorino_list(struct Vault* vault) {
     }
 
     int result = 0;
+    static const char encrypted_suffix[] = ".enc";
+    const size_t suffix_len = sizeof encrypted_suffix - 1;
     struct dirent* entry;
     for (;;) {
         errno = 0;
@@ -983,7 +990,9 @@ int fiorino_list(struct Vault* vault) {
             break;
         }
         size_t name_len = strlen(entry->d_name);
-        if (name_len <= 4 || strcmp(entry->d_name + name_len - 4, ".enc") != 0)
+        if (name_len <= suffix_len ||
+            strcmp(entry->d_name + name_len - suffix_len,
+                   encrypted_suffix) != 0)
             continue;
 
         struct stat st;
@@ -995,10 +1004,11 @@ int fiorino_list(struct Vault* vault) {
         }
         if (!S_ISREG(st.st_mode)) continue;
 
-        if (fwrite(entry->d_name, 1, name_len - 4, stdout) != name_len - 4 ||
-            fputc('\n', stdout) == EOF) {
+        size_t basename_len = name_len - suffix_len;
+        if (fwrite(entry->d_name, 1, basename_len, output) != basename_len ||
+            fputc('\n', output) == EOF) {
             fiorino_log_errno(FIORINO_LOG_ERROR,
-                              "could not write vault listing", "standard output");
+                              "could not write vault listing", "output stream");
             result = 1;
             break;
         }
