@@ -63,6 +63,31 @@ long long file_size(FILE* file) {
     return fsize;
 }
 
+/** Build the absolute path to the user's Fiorino root directory. */
+static char* build_vault_root_path(void) {
+    wordexp_t root_path;
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
+        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
+        return NULL;
+    }
+
+    size_t length = strlen(root_path.we_wordv[0]);
+    if (length >= PATH_MAX) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "vault root path is too long");
+        wordfree(&root_path);
+        return NULL;
+    }
+
+    char* path = strdup(root_path.we_wordv[0]);
+    wordfree(&root_path);
+    if (path == NULL) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not allocate vault root path", FIORINO_VAULT_ROOT_DIR);
+        return NULL;
+    }
+    return path;
+}
+
 /** Build and validate the absolute path to a vault directory. */
 static char* build_vault_path(const char* vault) {
     if (vault == NULL || vault[0] == '\0' || strchr(vault, '/') != NULL ||
@@ -71,64 +96,85 @@ static char* build_vault_path(const char* vault) {
         return NULL;
     }
 
-    wordexp_t root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
-        return NULL;
-    }
-
-    int length = snprintf(NULL, 0, "%s/%s", root_path.we_wordv[0], vault);
+    char* root = build_vault_root_path();
+    if (root == NULL) return NULL;
+    int length = snprintf(NULL, 0, "%s/%s", root, vault);
     if (length < 0 || length >= PATH_MAX) {
         fiorino_log_message(FIORINO_LOG_WARNING, "vault path is too long");
-        wordfree(&root_path);
+        free(root);
         return NULL;
     }
-
     char* path = malloc((size_t)length + 1);
     if (path == NULL) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate vault path", vault);
-        wordfree(&root_path);
+        free(root);
         return NULL;
     }
-    snprintf(path, (size_t)length + 1, "%s/%s", root_path.we_wordv[0], vault);
-    wordfree(&root_path);
+    snprintf(path, (size_t)length + 1, "%s/%s", root, vault);
+    free(root);
     return path;
 }
 
-/** \brief Idempotently creates the vault root directory with correct permissions
+/** \brief Checks or prepares the vault root directory.
+ * \param create_if_missing Create a missing root and correct its permissions
  * \return Status code
  * \retval 0 success
  * \retval 1 failure
  */
-int vault_root_directory_exists() {
-    // https://stackoverflow.com/a/15991337/15888601
-    wordexp_t vault_root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
+static int vault_root_directory_exists(int create_if_missing) {
+    char* root_path = build_vault_root_path();
+    if (root_path == NULL) return 1;
+
+    struct stat st;
+    if (lstat(root_path, &st) == -1) {
+        if (errno != ENOENT || !create_if_missing) {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not inspect vault root directory", root_path);
+            free(root_path);
+            return 1;
+        }
+        if (mkdir(root_path, FIORINO_VAULT_DIR_PERM) == -1 && errno != EEXIST) {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not create vault root directory", root_path);
+            free(root_path);
+            return 1;
+        }
+        if (lstat(root_path, &st) == -1) {
+            fiorino_log_errno(FIORINO_LOG_ERROR,
+                              "could not inspect created vault root directory", root_path);
+            free(root_path);
+            return 1;
+        }
+    }
+
+    if (S_ISLNK(st.st_mode) || !S_ISDIR(st.st_mode)) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault root is not a real directory: '%s'", root_path);
+        free(root_path);
         return 1;
     }
-    // https://stackoverflow.com/a/7430262/15888601
-    struct stat st = {0};
-    if (stat(vault_root_path.we_wordv[0], &st) == -1) {
-        if (mkdir(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
-            fiorino_log_errno(FIORINO_LOG_ERROR,
-                              "could not create vault root directory", vault_root_path.we_wordv[0]);
-            wordfree(&vault_root_path);
+    if (st.st_uid != geteuid()) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault root is not owned by the effective user: '%s'",
+                            root_path);
+        free(root_path);
+        return 1;
+    }
+    if ((st.st_mode & 07777) != FIORINO_VAULT_DIR_PERM) {
+        if (!create_if_missing) {
+            fiorino_log_message(FIORINO_LOG_WARNING,
+                                "vault root has unexpected permissions: '%s'", root_path);
+            free(root_path);
             return 1;
-        } else {
-            fiorino_log_message(FIORINO_LOG_INFO,
-                                "vault root directory created: '%s'",
-                                vault_root_path.we_wordv[0]);
         }
-    } else if (FIORINO_VAULT_DIR_PERM != st.st_mode) {
-        if (chmod(vault_root_path.we_wordv[0], FIORINO_VAULT_DIR_PERM) == -1) {
+        if (chmod(root_path, FIORINO_VAULT_DIR_PERM) == -1) {
             fiorino_log_errno(FIORINO_LOG_ERROR,
-                              "could not set vault root permissions", vault_root_path.we_wordv[0]);
-            wordfree(&vault_root_path);
+                              "could not set vault root permissions", root_path);
+            free(root_path);
             return 1;
         }
     }
-    wordfree(&vault_root_path);
+    free(root_path);
     return 0;
 }
 
@@ -163,6 +209,12 @@ static int vault_directory_exists(struct Vault* vault, int create_if_missing) {
     } else if (S_ISLNK(st.st_mode) || !S_ISDIR(st.st_mode)) {
         fiorino_log_message(FIORINO_LOG_WARNING,
                             "vault path is not a real directory: '%s'", vaultpath);
+        free(vaultpath);
+        return 1;
+    } else if (st.st_uid != geteuid()) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault directory is not owned by the effective user: '%s'",
+                            vaultpath);
         free(vaultpath);
         return 1;
     } else if ((st.st_mode & 07777) != FIORINO_VAULT_DIR_PERM) {
@@ -313,7 +365,7 @@ int vault_user_corresponds(struct Vault* vault) {
 }
 
 int runtime_setup() {
-    return vault_root_directory_exists();
+    return vault_root_directory_exists(1);
 }
 
 int runtime_setup_vault(struct Vault* vault) {
@@ -968,6 +1020,7 @@ int fiorino_list(struct Vault* vault, FILE* output) {
     fiorino_log_message(FIORINO_LOG_INFO,
                         "listing requested for vault '%s'",
                         vault->vault);
+    if (vault_root_directory_exists(0)) return 1;
     int setup_result = vault_directory_exists(vault, 0);
     if (setup_result != 0) return setup_result;
     if (vault_user_corresponds(vault)) return 1;
