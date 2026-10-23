@@ -399,6 +399,8 @@ static char* output_path(const char* root, const char* vault,
 /** \brief Verifies that the file path is fine to decrypt
  * \warning The function allocates memory for the full path,
  *          the caller is responsible for deallocation
+ * \warning Call runtime_setup_vault first to validate its path,
+ *          as this function fully trusts it
  * \return Full path to the encrypted file
  * \retval NULL failure
  */
