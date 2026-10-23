@@ -584,7 +584,7 @@ static FILE* open_input_file(const char* path) {
  * \retval -1 failure
  */
 static int write_close_output_file(FILE* output, const unsigned char* data,
-                              size_t length) {
+                                size_t length, int sync_data) {
     int failed = 0;
     if (fwrite(data, 1, length, output) != length) {
         fiorino_log_message(FIORINO_LOG_ERROR, "could not write complete output");
@@ -592,6 +592,10 @@ static int write_close_output_file(FILE* output, const unsigned char* data,
     }
     if (fflush(output) == EOF) {
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not flush", "output stream");
+        failed = 1;
+    }
+    if (sync_data && fsync(fileno(output)) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not sync", "output stream");
         failed = 1;
     }
     if (flock(fileno(output), LOCK_UN) == -1) {
@@ -603,6 +607,29 @@ static int write_close_output_file(FILE* output, const unsigned char* data,
         failed = 1;
     }
     return failed ? -1 : 0;
+}
+
+/** Sync directory-entry changes such as the encrypted-file rename. */
+static int sync_directory(const char* directory) {
+    int dirfd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dirfd == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not open parent directory for syncing", directory);
+        return -1;
+    }
+
+    int result = 0;
+    if (fsync(dirfd) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not sync parent directory", directory);
+        result = -1;
+    }
+    if (close(dirfd) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not close parent directory", directory);
+        result = -1;
+    }
+    return result;
 }
 
 int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
@@ -627,6 +654,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     unsigned char tag[FIORINO_GCM_TAG_SIZE] = {0};
     char* fullpath = NULL;
     char* fullpath_tmp = NULL;
+    char* vault_path = NULL;
     unsigned char* serialized = NULL;
     int result = 1;
     if (contents == NULL || ciphertext == NULL || key == NULL || salt == NULL) {
@@ -702,8 +730,10 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     }
     fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
     fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
+    vault_path = output_path(root_path.we_wordv[0], vault->vault, "", "");
     wordfree(&root_path);
-    if (fullpath == NULL || fullpath_tmp == NULL) goto cleanup_encrypt;
+    if (fullpath == NULL || fullpath_tmp == NULL || vault_path == NULL)
+        goto cleanup_encrypt;
 
     struct FiorinoBundle bundle = {
         .ciphertext_len = (size_t)encryptrc,
@@ -721,7 +751,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
     // Locking the files: https://stackoverflow.com/a/7573369/15888601
     // Unlocking the files: https://stackoverflow.com/a/33939497/15888601
 
-    if (write_close_output_file(file_enc, serialized, serialized_len) == -1) {
+    if (write_close_output_file(file_enc, serialized, serialized_len, 1) == -1) {
         goto cleanup_encrypt;
     }
 
@@ -731,6 +761,12 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
         if (unlink(fullpath_tmp) == -1 && errno != ENOENT) {
             fiorino_log_errno(FIORINO_LOG_ERROR, "could not delete temporary", fullpath_tmp);
         }
+        goto cleanup_encrypt;
+    }
+
+    // The rename succeeded, synchronizing the directory
+    if (sync_directory(vault_path) == -1) {
+        result = 1;
         goto cleanup_encrypt;
     }
 
@@ -758,6 +794,7 @@ cleanup_encrypt:
     free(iv);
     free(ciphertext);
     free(serialized);
+    free(vault_path);
     free(fullpath_tmp);
     free(fullpath);
     return result;
@@ -842,7 +879,7 @@ int fiorino_decrypt(struct Vault* vault, const char* file) {
 
     FILE* exported = open_output_file_to_user(file);
     if (exported == NULL) goto cleanup_decrypt;
-    if (write_close_output_file(exported, plaintext, (size_t)decryptrc) == -1) {
+    if (write_close_output_file(exported, plaintext, (size_t)decryptrc, 0) == -1) {
         goto cleanup_decrypt;
     }
 
