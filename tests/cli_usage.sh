@@ -4,6 +4,7 @@ set -u
 encrypt=./build/fiorino-encrypt
 decrypt=./build/fiorino-decrypt
 delete=./build/fiorino-delete
+list=./build/fiorino-list
 
 failures=0
 assert_failure() {
@@ -18,6 +19,7 @@ assert_failure() {
 [[ -x "$encrypt" ]] || { echo "missing $encrypt" >&2; exit 1; }
 [[ -x "$decrypt" ]] || { echo "missing $decrypt" >&2; exit 1; }
 [[ -x "$delete" ]] || { echo "missing $delete" >&2; exit 1; }
+[[ -x "$list" ]] || { echo "missing $list" >&2; exit 1; }
 
 assert_failure "$encrypt"
 assert_failure "$decrypt"
@@ -28,6 +30,9 @@ assert_failure "$delete" -f
 assert_failure "$encrypt" -x
 assert_failure "$decrypt" -x
 assert_failure "$delete" -x
+assert_failure "$list" -x
+assert_failure "$list" -v
+assert_failure "$list" -f
 
 if (( failures != 0 )); then
     exit 1

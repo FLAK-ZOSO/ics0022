@@ -19,8 +19,9 @@ VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
 			build/test_fiorino_limits build/test_fiorino_roundtrip \
 			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log \
-			build/test_fiorino_vault_root build/test_cli_delete
-CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete
+			build/test_fiorino_vault_root build/test_cli_delete build/test_cli_list
+CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete \
+			build/fiorino-list
 CC=cc
 STRIP ?= strip
 # CC=/opt/fil/bin/filcc
@@ -32,7 +33,7 @@ DESTDIR ?=
 # https://www.gnu.org/software/make/manual/html_node/How-Make-Works.html
 all: lib/libfiorino.so
 
-cli: build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete
+cli: build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete build/fiorino-list
 
 sdist:
 	mkdir -p dist
@@ -46,13 +47,13 @@ dist: all cli
 		--transform='s,^,$(DIST_NAME)/,' \
 		README.md DESIGN.md CHECKPOINTS.md \
 		build/fiorino-encrypt build/fiorino-decrypt \
-		build/fiorino-delete lib/libfiorino.so
+		build/fiorino-delete build/fiorino-list lib/libfiorino.so
 
 install: all cli
 	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/lib \
 		$(DESTDIR)$(PREFIX)/share/doc/fiorino
 	install -m 0755 build/fiorino-encrypt build/fiorino-decrypt \
-		build/fiorino-delete $(DESTDIR)$(PREFIX)/bin/
+		build/fiorino-delete build/fiorino-list $(DESTDIR)$(PREFIX)/bin/
 	install -m 0644 lib/libfiorino.so $(DESTDIR)$(PREFIX)/lib/
 	install -m 0644 README.md DESIGN.md CHECKPOINTS.md \
 		$(DESTDIR)$(PREFIX)/share/doc/fiorino/
@@ -62,12 +63,14 @@ install-strip: install
 		$(DESTDIR)$(PREFIX)/bin/fiorino-encrypt \
 		$(DESTDIR)$(PREFIX)/bin/fiorino-decrypt \
 		$(DESTDIR)$(PREFIX)/bin/fiorino-delete \
+		$(DESTDIR)$(PREFIX)/bin/fiorino-list \
 		$(DESTDIR)$(PREFIX)/lib/libfiorino.so
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/fiorino-encrypt \
 		$(DESTDIR)$(PREFIX)/bin/fiorino-decrypt \
 		$(DESTDIR)$(PREFIX)/bin/fiorino-delete \
+		$(DESTDIR)$(PREFIX)/bin/fiorino-list \
 		$(DESTDIR)$(PREFIX)/lib/libfiorino.so
 	rm -f $(DESTDIR)$(PREFIX)/share/doc/fiorino/README.md \
 		$(DESTDIR)$(PREFIX)/share/doc/fiorino/DESIGN.md \
@@ -117,6 +120,13 @@ build/fiorino-delete: lib/libfiorino.so build/fiorino-delete.o build/fiorino_cli
 	$(CC) $(CCFLAGS) -o $@ build/fiorino-delete.o build/fiorino_cli.o -L$(CURDIR)/lib \
 		-lfiorino $(HARDEN_LD_FLAGS) $(LD_FLAGS_RPATH)
 
+build/fiorino-list.o: src/fiorino-list.c
+	$(CC) $(CCFLAGS) -c -o $@ $<
+
+build/fiorino-list: lib/libfiorino.so build/fiorino-list.o build/fiorino_cli.o
+	$(CC) $(CCFLAGS) -o $@ build/fiorino-list.o build/fiorino_cli.o -L$(CURDIR)/lib \
+		-lfiorino $(HARDEN_LD_FLAGS) $(LD_FLAGS_RPATH)
+
 build/test_cli_usage: $(CLI_TESTS) tests/cli_usage.sh | build
 	@bash tests/cli_usage.sh
 
@@ -129,6 +139,9 @@ build/test_cli_roundtrip: $(CLI_TESTS) tests/cli_roundtrip.c | build
 build/test_cli_delete: $(CLI_TESTS) tests/cli_delete.c lib/libfiorino.so | build
 	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ tests/cli_delete.c -L$(CURDIR)/lib \
 		-lfiorino -lutil -Wl,-rpath,$(CURDIR)/lib
+
+build/test_cli_list: $(CLI_TESTS) tests/cli_list.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ tests/cli_list.c -lutil
 
 build/test_encrypt_gcm: tests/encrypt_gcm.c src/encrypt.c src/encrypt.h src/bundle.h src/fiorino_log.c src/fiorino_log.h | build
 	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -U_FORTIFY_SOURCE -o $@ \
@@ -177,6 +190,7 @@ test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_round
 	./build/test_fiorino_vault_root
 	./build/test_cli_roundtrip
 	./build/test_cli_delete
+	./build/test_cli_list
 
 memtest:
 	@sanitized=0; \
