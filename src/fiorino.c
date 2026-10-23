@@ -63,6 +63,38 @@ long long file_size(FILE* file) {
     return fsize;
 }
 
+/** Build and validate the absolute path to a vault directory. */
+static char* build_vault_path(const char* vault) {
+    if (vault == NULL || vault[0] == '\0' || strchr(vault, '/') != NULL ||
+        strcmp(vault, ".") == 0 || strcmp(vault, "..") == 0) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "invalid vault name");
+        return NULL;
+    }
+
+    wordexp_t root_path;
+    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
+        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
+        return NULL;
+    }
+
+    int length = snprintf(NULL, 0, "%s/%s", root_path.we_wordv[0], vault);
+    if (length < 0 || length >= PATH_MAX) {
+        fiorino_log_message(FIORINO_LOG_WARNING, "vault path is too long");
+        wordfree(&root_path);
+        return NULL;
+    }
+
+    char* path = malloc((size_t)length + 1);
+    if (path == NULL) {
+        fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate vault path", vault);
+        wordfree(&root_path);
+        return NULL;
+    }
+    snprintf(path, (size_t)length + 1, "%s/%s", root_path.we_wordv[0], vault);
+    wordfree(&root_path);
+    return path;
+}
+
 /** \brief Idempotently creates the vault root directory with correct permissions
  * \return Status code
  * \retval 0 success
@@ -108,33 +140,8 @@ int vault_root_directory_exists() {
  * \retval FIORINO_AUTHENTICATION_FAILED password does not match the vault
  */
 int vault_directory_exists(struct Vault* vault) {
-    if (strstr(vault->vault, "/") || strcmp(vault->vault, "..") == 0 ||
-        strcmp(vault->vault, ".") == 0) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "invalid vault name");
-        return 1;
-    }
-    // https://stackoverflow.com/a/15991337/15888601
-    wordexp_t vault_root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &vault_root_path, WRDE_NOCMD) != 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
-        return 1;
-    }
-    int vaultpath_alloc = strlen(vault_root_path.we_wordv[0]) + 1
-        + strlen(vault->vault) + 1;
-    if (vaultpath_alloc > PATH_MAX) {
-        fiorino_log_message(FIORINO_LOG_WARNING, "vault path is too long");
-        wordfree(&vault_root_path);
-        return 1;
-    }
-    char* vaultpath = malloc(vaultpath_alloc);
-    if (vaultpath == NULL) {
-        fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate vault path", vault->vault);
-        wordfree(&vault_root_path);
-        return 1;
-    }
-    sprintf(vaultpath, "%s/%s",
-            vault_root_path.we_wordv[0], vault->vault);
-    wordfree(&vault_root_path);
+    char* vaultpath = build_vault_path(vault->vault);
+    if (vaultpath == NULL) return 1;
 
     // https://stackoverflow.com/a/7430262/15888601
     struct stat st = {0};
@@ -393,22 +400,20 @@ fail:
     return 1;
 }
 
-static char* output_path(const char* root, const char* vault,
-                         const char* name, const char* suffix);
+static char* output_path(const char* directory, const char* name,
+                         const char* suffix);
 
-/** \brief Verifies that the file path is fine to decrypt
+/** \brief Builds and verifies the path to an encrypted vault file
  * \warning The function allocates memory for the full path,
  *          the caller is responsible for deallocation
- * \warning Call runtime_setup_vault first to validate its path,
- *          as this function fully trusts it
  * \return Full path to the encrypted file
  * \retval NULL failure
  */
 char* runtime_setup_file(const struct Vault* vault, const char* file) {
-    /** \warning we must ensure not to fall in a race condition with an attacker
-     *           replacing that path with a dangerous symlink
-     * \note Check for path traversal and other attacks
-     * \note Reject .enc file extensions, as that is an internal implementation detail
+    /** \warning Callers still need to open the resulting path with O_NOFOLLOW;
+     *           this lstat check alone cannot prevent a path replacement race.
+     * \note Reject path separators and dot-directory names.
+     * \note Reject .enc file extensions, as that is an internal implementation detail.
      */
     if (strstr(file, "/") || strcmp(file, "..") == 0 ||
         strcmp(file, ".") == 0) {
@@ -416,13 +421,10 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
         return NULL;
     }
 
-    wordexp_t root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
-        return NULL;
-    }
-    char* fullpath = output_path(root_path.we_wordv[0], vault->vault, file, ".enc");
-    wordfree(&root_path);
+    char* directory = build_vault_path(vault->vault);
+    if (directory == NULL) return NULL;
+    char* fullpath = output_path(directory, file, ".enc");
+    free(directory);
     if (fullpath == NULL) {
         return NULL;
     }
@@ -438,9 +440,9 @@ char* runtime_setup_file(const struct Vault* vault, const char* file) {
     return fullpath;
 }
 
-static char* output_path(const char* root, const char* vault,
-                         const char* name, const char* suffix) {
-    int length = snprintf(NULL, 0, "%s/%s/%s%s", root, vault, name, suffix);
+static char* output_path(const char* directory, const char* name,
+                         const char* suffix) {
+    int length = snprintf(NULL, 0, "%s/%s%s", directory, name, suffix);
     if (length < 0) {
         fiorino_log_message(FIORINO_LOG_ERROR, "could not format output path");
         return NULL;
@@ -451,8 +453,7 @@ static char* output_path(const char* root, const char* vault,
 
     char* path = malloc((size_t)length + 1);
     if (path != NULL)
-        snprintf(path, (size_t)length + 1, "%s/%s/%s%s",
-                 root, vault, name, suffix);
+        snprintf(path, (size_t)length + 1, "%s/%s%s", directory, name, suffix);
     else
         fiorino_log_errno(FIORINO_LOG_ERROR, "could not allocate output path", name);
     return path;
@@ -723,18 +724,11 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file) {
         result = 2; goto cleanup_encrypt;
     }
 
-    /// \todo check the goddamn filename and vault name
-    // https://stackoverflow.com/a/15991337/15888601
-    wordexp_t root_path;
-    if (wordexp(FIORINO_VAULT_ROOT_DIR, &root_path, WRDE_NOCMD) != 0) {
-        fiorino_log_message(FIORINO_LOG_ERROR, "could not expand vault root path");
-        goto cleanup_encrypt;
-    }
-    fullpath = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc");
-    fullpath_tmp = output_path(root_path.we_wordv[0], vault->vault, file->name, ".enc.tmp");
-    vault_path = output_path(root_path.we_wordv[0], vault->vault, "", "");
-    wordfree(&root_path);
-    if (fullpath == NULL || fullpath_tmp == NULL || vault_path == NULL)
+    vault_path = build_vault_path(vault->vault);
+    if (vault_path == NULL) goto cleanup_encrypt;
+    fullpath = output_path(vault_path, file->name, ".enc");
+    fullpath_tmp = output_path(vault_path, file->name, ".enc.tmp");
+    if (fullpath == NULL || fullpath_tmp == NULL)
         goto cleanup_encrypt;
 
     struct FiorinoBundle bundle = {

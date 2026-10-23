@@ -75,6 +75,7 @@ int fiorino_encrypt_stream(struct Vault* vault, struct FileToEncrypt* file);
 /** \brief Lists the files within a vault
  * \param vault Identifier of the vault
  * \note The caller is responsible for the allocation of the vault
+ * \note Writes one plaintext basename per line to standard output.
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
