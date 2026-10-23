@@ -11,6 +11,6 @@
 - System logging uses syslog; journal sealing can be configured by system administrators on top.
 - Free-space preflight checks and a global concurrency limit were not implemented.
 - File deletion unlinks the file; secure erasure is not promised.
-- Atomic replacement renames a completed temporary file; syncing the containing directory for crash durability is not implemented.
+- Atomic replacement renames a completed temporary file.
 - OpenSSL use does not establish FIPS-validated operation.
 - SELinux policy, Fil-C, static analysis, and man pages are out of scope.
