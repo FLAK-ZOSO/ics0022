@@ -896,6 +896,7 @@ int fiorino_delete(struct Vault* vault, const char* file) {
         fiorino_log_message(FIORINO_LOG_WARNING,
                             "%lu hard links exist to %s, so the inode will persist",
                             links, fullpath);
+        result = 2;
         goto cleanup_delete;
     }
 
