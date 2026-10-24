@@ -1,6 +1,5 @@
 # Remaining work
 
-- Add CLI confirmation before overwriting encrypted files or deleting vault files.
 - Finish validation and write the project report.
 
 ## Report notes
