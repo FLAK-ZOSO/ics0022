@@ -135,3 +135,10 @@ protection, stack-protector-strong, and position-independent code. CLI
 executables are linked as PIE with full RELRO, immediate symbol binding, and a
 non-executable stack. AddressSanitizer and UndefinedBehaviorSanitizer are also
 enabled by default in the build.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/checksec.png}
+    \caption{Checksec output for the installed \texttt{fiorino-encrypt} executable.}
+    \label{fig:checksec}
+\end{figure}
