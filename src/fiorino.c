@@ -178,6 +178,29 @@ static int vault_root_directory_exists(int create_if_missing) {
     return 0;
 }
 
+/** Validate the opened authentication record itself, not just its pathname. */
+static int validate_auth_record(int authfd, const char* auth_path) {
+    struct stat st;
+    if (fstat(authfd, &st) == -1) {
+        fiorino_log_errno(FIORINO_LOG_ERROR,
+                          "could not inspect vault authentication record", auth_path);
+        return 1;
+    }
+    if (!S_ISREG(st.st_mode)) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault authentication record is not a regular file: '%s'",
+                            auth_path);
+        return 1;
+    }
+    if (st.st_uid != geteuid()) {
+        fiorino_log_message(FIORINO_LOG_WARNING,
+                            "vault authentication record is not owned by the effective user: '%s'",
+                            auth_path);
+        return 1;
+    }
+    return 0;
+}
+
 /** \brief Creates or validates a vault directory and authenticates its password
  * \param vault The vault to prepare and authenticate
  * \return Status code
@@ -253,10 +276,12 @@ static int vault_directory_exists(struct Vault* vault, int create_if_missing) {
             if (authfd >= 0) {
                 creating_auth = 1;
             } else if (errno == EEXIST) {
-                authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+                authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC |
+                              O_NONBLOCK);
             }
         } else {
-            authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+            authfd = open(auth_path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC |
+                          O_NONBLOCK);
         }
         unsigned char salt[FIORINO_PBKDF2_SALT_SIZE] = {0};
         unsigned char derived[FIORINO_KEY_SIZE] = {0};
@@ -264,6 +289,18 @@ static int vault_directory_exists(struct Vault* vault, int create_if_missing) {
             fiorino_log_errno(FIORINO_LOG_ERROR,
                               "could not open vault authentication record", auth_path);
             auth_failed = 1;
+        } else if (validate_auth_record(authfd, auth_path) != 0) {
+            auth_failed = 1;
+            if (close(authfd) == -1) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not close vault authentication record",
+                                  auth_path);
+            }
+            if (creating_auth && unlink(auth_path) == -1) {
+                fiorino_log_errno(FIORINO_LOG_ERROR,
+                                  "could not remove invalid authentication record",
+                                  auth_path);
+            }
         } else if (creating_auth) {
             if (RAND_priv_bytes(salt, sizeof salt) != 1) {
                 fiorino_log_message(FIORINO_LOG_ERROR,

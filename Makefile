@@ -19,7 +19,8 @@ VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=definite,indirect --error-
 TEST_BINS = build/test_encrypt_gcm build/test_bundle build/test_encrypt_file_cleanup \
 			build/test_fiorino_limits build/test_fiorino_roundtrip \
 			build/test_fiorino_symlink build/test_fiorino_vault_symlink build/test_fiorino_log \
-			build/test_fiorino_vault_root build/test_cli_delete build/test_cli_list
+			build/test_fiorino_vault_root build/test_fiorino_auth_record \
+			build/test_cli_delete build/test_cli_list
 CLI_TESTS = build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete \
 			build/fiorino-list
 CC=cc
@@ -181,6 +182,10 @@ build/test_fiorino_vault_root: tests/fiorino_vault_root.c lib/libfiorino.so | bu
 	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
 		-lfiorino -Wl,-rpath,$(CURDIR)/lib
 
+build/test_fiorino_auth_record: tests/fiorino_auth_record.c lib/libfiorino.so | build
+	$(CC) $(CCFLAGS) $(HARDEN_CFLAGS) -o $@ $< -L$(CURDIR)/lib \
+		-lfiorino -Wl,-rpath,$(CURDIR)/lib
+
 test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_roundtrip
 	./build/test_encrypt_gcm
 	./build/test_bundle
@@ -191,6 +196,7 @@ test: $(TEST_BINS) build/test_cli_usage build/test_cli_fuzz build/test_cli_round
 	./build/test_fiorino_symlink
 	./build/test_fiorino_vault_symlink
 	./build/test_fiorino_vault_root
+	./build/test_fiorino_auth_record
 	./build/test_cli_roundtrip
 	./build/test_cli_delete
 	./build/test_cli_list
