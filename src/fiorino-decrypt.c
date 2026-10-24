@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     }
 
     if (fprintf(stderr,
-                "Decrypting '%s' from vault '%s' to the current directory; an existing output file will be overwritten.\n",
+                "Decrypting '%s' from vault '%s' to the current directory; on success, any existing output file will be overwritten.\n",
                 filename, vault) < 0 || fflush(stderr) == EOF)
         return EXIT_FAILURE;
 

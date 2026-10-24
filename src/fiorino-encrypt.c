@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     }
 
     if (fprintf(stderr,
-                "Encrypting '%s' into vault '%s'; an existing encrypted copy will be replaced.\n",
+                "Encrypting '%s' into vault '%s'; on success, any existing encrypted copy will be replaced.\n",
                 filename, vault) < 0 || fflush(stderr) == EOF)
         return EXIT_FAILURE;
 
