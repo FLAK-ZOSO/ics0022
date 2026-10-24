@@ -8,3 +8,26 @@ local user protecting files from other users of the same machine.
 Fiorino essentially protects files behind two factors: access to the encrypted
 files (i.e. compromise of the OS, the filesystem, or the system user) and password
 for the encryption of the files themselves.
+
+\section{Path handling and filesystem attacks}
+
+Vault and output names are externally supplied and thus untrusted; without
+protections, \textit{path traversal} attacks and not only would be possible.
+
+\paragraph{Vault and filename rejection}
+Fiorino treats names as single path
+components and rejects \texttt{/}, \texttt{.}, and \texttt{..}. On POSIX,
+backslash is an ordinary filename character: the implementation accepts it,
+but if ever porting this software to Windows the developer must be aware of it.
+Constructed paths are length-checked before allocation or use.
+
+\paragraph{Vault directories and \texttt{.auth}}
+Vault directories are restricted to the owner, and the code checks their ownership
+and permissions.
+
+\paragraph{Symlink rejection}
+Fiorino checks vault
+directories with \texttt{lstat}, opens sensitive files with
+\texttt{O\_NOFOLLOW}, and inspects opened descriptors with \texttt{fstat}.
+Listing uses \texttt{fstatat} with \texttt{AT\_SYMLINK\_NOFOLLOW} and such
+options are used all across the library.
