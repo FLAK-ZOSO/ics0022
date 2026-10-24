@@ -31,3 +31,29 @@ directories with \texttt{lstat}, opens sensitive files with
 \texttt{O\_NOFOLLOW}, and inspects opened descriptors with \texttt{fstat}.
 Listing uses \texttt{fstatat} with \texttt{AT\_SYMLINK\_NOFOLLOW} and such
 options are used all across the library.
+
+\section{Password and encrypted-file attacks}
+
+The password verifier and each encrypted file use independent random salts,
+while the password is the same across each vault.
+
+\paragraph{Key derivation}
+PBKDF2-HMAC-SHA-256 is configured for 600,000 iterations, and verifier
+comparison uses \texttt{CRYPTO\_memcmp}.
+
+It does not prevent offline guessing if an attacker obtains a ciphertext,
+thus password strength is still relevant (a rate limit is not implemented in the CLI
+as it would be useless) while reversal stays computationally unfeasible.
+
+\paragraph{Encryption and authenticity at rest}
+AES-256-GCM detects modification of the encrypted payload. Decryption checks
+the tag before opening the plaintext destination, so a wrong password or
+modified bundle does not truncate an existing output file.
+
+\paragraph{Limitations and future possibilities for AEAD}
+The bundle does
+not authenticate the vault name or filename as associated data. Consequently,
+those names are not cryptographically bound to the ciphertext; a bundle can
+be renamed or copied, and the filename and approximate plaintext size remain
+visible. The current format also has no version or magic field. Future versions
+can use AEAD (Authenticated Encryption with Associated Data) easily on top.
