@@ -1,7 +1,46 @@
-This chapter covers the practical implementation of Fiorino.
+This chapter covers the implementation of Fiorino.
 
-\paragraph{Tech stack}
+\section{Architecture}
 
-Fiorino is written in C17, uses POSIX.1-2008 system APIs and depends on OpenSSL 3.0+.
+Fiorino is written in C17 and uses OpenSSL 3.x for cryptography and password
+input. The current build and supported command-line environment are GNU/Linux,
+while the source code works on any POSIX.1-2008 platform.
 
-\paragraph{}
+\paragraph{The CLI programs}
+The project is divided into a shared C library and four command-line programs:
+
+\begin{itemize}
+    \item \texttt{fiorino-encrypt} encrypts a regular file into a vault;
+    \item \texttt{fiorino-decrypt} decrypts a vault entry into the current directory;
+    \item \texttt{fiorino-delete} removes an encrypted entry from a vault;
+    \item \texttt{fiorino-list} prints the names of entries in a vault.
+\end{itemize}
+
+Each program has its own executable; there is no combined \texttt{fiorino} command dispatcher.
+
+\paragraph{The library}
+The library implements...
+
+\begin{itemize}
+    \item vault setup and authentication
+    \item file encryption to vault
+    \item file decryption from vault
+    \item file deletion from vault
+    \item listing of the files encrypted in a vault
+    \item encrypted file bundle serialization
+\end{itemize}
+
+The library also features more general-purpose helpers that are considered unstable
+but are technically not Fiorino-specific, for purposes such as...
+
+\begin{itemize}
+    \item command-line programs parse options, read passwords
+    \item install signal handlers
+\end{itemize}
+
+The encryption API accepts an already-open \texttt{FILE *} and a separate
+output basename. The basename therefore does not have to match the path used
+to open the input stream. The caller opens and closes the stream, while the
+library checks and locks it before reading. This keeps pathname handling at the
+CLI boundary while allowing other C programs to use the library with their own
+open streams.
