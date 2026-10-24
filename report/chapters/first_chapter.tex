@@ -107,10 +107,13 @@ the plaintext into the current directory. A successful decryption replaces
 an existing file with the same basename. The existing output file's mode is
 preserved.
 
-Deletion checks the encrypted file's hard-link count and unlinks it only when
-no other hard links are reported. Listing scans an existing vault and writes
-one basename per line to a caller-provided stream. The CLI uses standard
-output for the listing and standard error for status messages.
+Before deletion, the library checks the encrypted file's hard-link count and
+refuses deletion when the count is greater than one.
+
+\paragraph{Listing vault contents}
+Listing scans an existing vault and writes one basename per line to a
+caller-provided stream. The CLI uses standard output for the listing and
+standard error for status messages.
 
 \section{Supporting components (of the security design)}
 
