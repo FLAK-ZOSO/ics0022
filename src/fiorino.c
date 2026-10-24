@@ -995,11 +995,8 @@ cleanup_decrypt:
     return result;
 }
 
-/** \brief Reports the number of hard links to the inode of the specified file
- *  \retval -1 Failure to retrieve the information
- *  \return The number of hard links
- */
-nlink_t fiorino_hardlinks(const char* path) {
+/** Retrieve the hard-link count without overloading unsigned nlink_t as status. */
+static int fiorino_hardlinks(const char* path, nlink_t* links) {
     struct stat sb;
     if (stat(path, &sb) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING,
@@ -1007,7 +1004,8 @@ nlink_t fiorino_hardlinks(const char* path) {
         return -1;
     }
     /// \todo informationally log the paths of the other links, if possible
-    return sb.st_nlink;
+    *links = sb.st_nlink;
+    return 0;
 }
 
 int fiorino_delete(struct Vault* vault, const char* file) {
@@ -1020,7 +1018,11 @@ int fiorino_delete(struct Vault* vault, const char* file) {
     if (fullpath == NULL) return 1;
     int result = 1;
 
-    nlink_t links = fiorino_hardlinks(fullpath);
+    nlink_t links;
+    if (fiorino_hardlinks(fullpath, &links) == -1) {
+        result = FIORINO_DELETE_LINK_CHECK_FAILED;
+        goto cleanup_delete;
+    }
     if (links > 1) {
         fiorino_log_message(FIORINO_LOG_WARNING,
                             "%lu hard links exist to %s, so the inode will persist",

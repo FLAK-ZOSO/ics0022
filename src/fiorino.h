@@ -9,6 +9,8 @@
 #define FIORINO_VAULT_PERM 0600
 /** Return code used when the supplied password does not match the vault. */
 #define FIORINO_AUTHENTICATION_FAILED 3
+/** Deletion stopped because the file's hard-link count could not be checked. */
+#define FIORINO_DELETE_LINK_CHECK_FAILED 4
 
 /** \brief Information needed to access a vault */
 struct Vault {
@@ -42,13 +44,14 @@ int fiorino_decrypt(struct Vault* vault, const char* file);
  * \param vault Identifier of the vault to delete from
  * \param file File to delete, by basename
  * \note The caller is responsible for the allocation of vault and filename
- * \warning If other hard links exist to the same inode, this will be logged
- *          but the inode will persist
+ * \warning If other hard links exist to the same inode, deletion is refused.
+ *          If the link count cannot be checked, deletion also fails closed.
  * \return Return code
  * \retval 0 success
  * \retval 1 failure
  * \retval 2 other hard links may exist to the same inode
  * \retval FIORINO_AUTHENTICATION_FAILED vault authentication failed
+ * \retval FIORINO_DELETE_LINK_CHECK_FAILED hard-link count could not be checked
  */
 int fiorino_delete(struct Vault* vault, const char* file);
 

@@ -68,6 +68,12 @@ int main(int argc, char** argv) {
         fiorino_cleanse(passphrase, sizeof passphrase);
         if (delete_result == FIORINO_AUTHENTICATION_FAILED)
             fprintf(stderr, "Wrong vault password, aborting.\n");
+        else if (delete_result == 2)
+            fprintf(stderr,
+                    "Deletion refused: other hard links to this encrypted file may remain.\n");
+        else if (delete_result == FIORINO_DELETE_LINK_CHECK_FAILED)
+            fprintf(stderr,
+                    "Could not check the encrypted file's hard links; it was not deleted.\n");
         else
             fprintf(stderr, "Deletion failed, aborting.\n");
         return EXIT_FAILURE;
