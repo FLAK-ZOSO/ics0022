@@ -78,3 +78,25 @@ plaintext; currently, this is not implemented.
 Taking input from a stream presents some risks that are not fully handled by
 the internals of the API, mainly because of the assumption of such stream not
 coming from a network socket or equivalently from a slowly yielding pipe.
+
+\section{File consistency and failure behavior}
+
+Encryption takes a shared \texttt{flock}, checks the open stream with
+\texttt{fstat}, and reads progressively. It detects a short read and checks
+for an extra byte after the measured size. This catches some changes during
+the read.
+
+\paragraph{Limitations of \texttt{flock}}
+By design \texttt{flock} is advisory: a writer that ignores the lock can
+still modify the file, including without changing its size, thus eluding the checks.
+
+\paragraph{Writing ciphertext}
+Encrypted output is written to a temporary file, synchronized, renamed (atomically)
+over the destination, and followed by a directory synchronization.
+
+\paragraph{Known limitation on writing the ciphertext}
+A write failure before the rename can leave the
+temporary file behind. Decryption writes
+plaintext directly to its destination; an I/O failure during that write can
+leave a partial plaintext file. These are known limits of the current file
+handling.
