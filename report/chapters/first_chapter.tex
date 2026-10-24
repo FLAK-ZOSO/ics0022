@@ -71,3 +71,23 @@ is about to be authorized by authenticating.
 The entered password is processed with the stored salt, and the result is
 compared with \texttt{CRYPTO\_memcmp}. This verifier authenticates access to
 the vault; it is separate from the key derived for each encrypted file.
+
+\section{Encryption and bundle format}
+
+For each file, Fiorino generates a fresh 32-byte salt and derives a 256-bit
+AES key from the vault password with PBKDF2-HMAC-SHA-256. The key is not
+stored, as I deemed the architectural choice of a master password less practical
+than that of a primary 
+
+OpenSSL's random generator supplies a 16-byte IV. The EVP interface
+performs AES-256-GCM encryption and returns the authentication tag separately.
+GCM does not add block padding, so ciphertext length equals plaintext length.
+
+The serialized bundle contains, in order:
+
+\begin{enumerate}
+    \item the 16-byte IV;
+    \item the 32-byte per-file salt;
+    \item the ciphertext;
+    \item the 16-byte GCM authentication tag.
+\end{enumerate}
