@@ -39,8 +39,35 @@ but are technically not Fiorino-specific, for purposes such as...
 \end{itemize}
 
 The encryption API accepts an already-open \texttt{FILE *} and a separate
-output basename. The basename therefore does not have to match the path used
-to open the input stream. The caller opens and closes the stream, while the
-library checks and locks it before reading. This keeps pathname handling at the
-CLI boundary while allowing other C programs to use the library with their own
-open streams.
+output basename.
+
+\section{Vaults and passwords}
+
+Vault data is stored below \texttt{\textasciitilde/.fiorino}. Each vault is a
+subdirectory containing an authentication record and encrypted files:
+
+\begin{verbatim}
+~/.fiorino/<vault>/.auth
+~/.fiorino/<vault>/<basename>.enc
+\end{verbatim}
+
+\paragraph{The \texttt{.auth} record}
+Each operation that reads or writes to a vault, checks the vault's \texttt{.auth}
+record for authentication of the subject through the passphrase.
+
+The authentication record contains a random 32-byte salt
+and a 32-byte PBKDF2-HMAC-SHA-256 verifier, computed with 600,000 iterations
+as per \href{https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html}
+{OWASP's Password Storage guidelines}.
+
+\paragraph{Password input and evaluation}
+Passwords are read with OpenSSL's terminal UI and are not echoed or passed as
+command-line arguments.
+
+Encryption prompts twice; decryption, deletion, and
+listing prompt once, and the user reads a string presenting the action that
+is about to be authorized by authenticating.
+
+The entered password is processed with the stored salt, and the result is
+compared with \texttt{CRYPTO\_memcmp}. This verifier authenticates access to
+the vault; it is separate from the key derived for each encrypted file.
