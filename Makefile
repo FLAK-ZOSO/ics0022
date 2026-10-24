@@ -35,6 +35,9 @@ all: lib/libfiorino.so
 
 cli: build/fiorino-encrypt build/fiorino-decrypt build/fiorino-delete build/fiorino-list
 
+report:
+	$(MAKE) -C report pdf
+
 sdist:
 	mkdir -p dist
 	tar -czf dist/$(DIST_NAME).tar.gz \
@@ -220,4 +223,4 @@ memtest:
 clean:
 	rm -rf build lib
 
-.PHONY: all cli sdist dist install install-strip uninstall clean test memtest
+.PHONY: all cli report sdist dist install install-strip uninstall clean test memtest
