@@ -37,6 +37,11 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    if (fprintf(stderr,
+                "Encrypting '%s' into vault '%s'; an existing encrypted copy will be replaced.\n",
+                filename, vault) < 0 || fflush(stderr) == EOF)
+        return EXIT_FAILURE;
+
     char passphrase[100] = {0};
     fiorino_log_set_threshold(FIORINO_LOG_INFO);
     int password_result = fiorino_read_password(passphrase, sizeof passphrase, 1);

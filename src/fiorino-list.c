@@ -28,6 +28,10 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (fprintf(stderr, "Listing files in vault '%s'.\n", vault) < 0 ||
+        fflush(stderr) == EOF)
+        return EXIT_FAILURE;
+
     char passphrase[100] = {0};
     fiorino_log_set_threshold(FIORINO_LOG_INFO);
     int password_result = fiorino_read_password(passphrase, sizeof passphrase, 0);
