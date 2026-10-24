@@ -100,3 +100,68 @@ temporary file behind. Decryption writes
 plaintext directly to its destination; an I/O failure during that write can
 leave a partial plaintext file. These are known limits of the current file
 handling.
+
+\section{Deletion and memory exposure}
+
+Deletion uses \texttt{unlink}, which removes a directory entry; it does not
+securely erase data from the storage device. Filesystems, snapshots, copy-on-write
+storage, and solid-state devices make overwriting a file an unreliable general
+sanitization method. If \texttt{stat} succeeds and reports more than one hard
+link, Fiorino refuses deletion and tells the CLI user why.
+
+\paragraph{Known limits and future work}
+The link-count check can still race with a concurrent process
+that changes the links after the check. Fiorino does not yet enumerate the other
+link names.
+
+\paragraph{Memory cleansing in process memory}
+The program cleanses sensitive buffers with \texttt{OPENSSL\_cleanse} during
+cleanup, and clears unauthenticated plaintext after a GCM verification
+failure. This reduces the lifetime of those particular buffers. It cannot
+remove copies held in registers, OpenSSL internals, swap, crash dumps, or
+other process memory.
+
+\section{Security testing}
+
+The tests exercise concrete rejection and integrity properties, rather than
+trying to establish that Fiorino is free of vulnerabilities:
+
+Manual testing previously showed that using a symlink as a vault directory
+could redirect encrypted output outside the Fiorino root. The vault checks
+were tightened, and the regression test now requires the operation to fail
+without creating the authentication record or ciphertext in the symlink
+target.
+
+\begin{itemize}
+    \item \texttt{tests/fiorino\_roundtrip.c} checks binary and empty-file
+    round trips, wrong passwords, truncated bundles, and changes to the IV,
+    salt, ciphertext, and tag. It also checks that failed authentication
+    preserves an existing plaintext file.
+    \item \texttt{tests/fiorino\_limits.c} checks overlong vault and output
+    paths and an input larger than the configured limit.
+    \item \texttt{tests/fiorino\_vault\_root.c} and
+    \texttt{tests/fiorino\_vault\_symlink.c} check rejection of symlinked
+    vault roots and vault directories. The latter confirms that a symlinked
+    vault does not create the authentication record or ciphertext in its
+    target.
+    \item \texttt{tests/fiorino\_symlink.c} checks that symlinked plaintext
+    outputs and temporary encrypted outputs do not redirect writes.
+    \item \texttt{tests/fiorino\_auth\_record.c} checks authentication
+    records that are symlinks, FIFOs, or owned by another user when the test
+    environment permits the ownership change.
+    \item \texttt{tests/encrypt\_file\_cleanup.c} checks encryption success,
+    write failure, and rename failure. It manually removes the temporary file
+    left by the write-failure case; the test does not claim that the library
+    removes it automatically.
+    \item CLI tests check usage errors, encryption/decryption round trips,
+    listing, deletion, wrong passwords, hard links, and symlink cases. The
+    rejection script also supplies hostile-looking vault values, but invokes
+    the commands without the required filename, so those values do not reach
+    the library's path validation.
+\end{itemize}
+
+\paragraph{Functional, sanitization and memory testing}
+The default build enables AddressSanitizer and UndefinedBehaviorSanitizer.
+\texttt{make test} runs the functional and rejection tests, while
+\texttt{make memtest} rebuilds the tests without sanitizers and runs them
+under Valgrind.
