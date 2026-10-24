@@ -57,3 +57,24 @@ those names are not cryptographically bound to the ciphertext; a bundle can
 be renamed or copied, and the filename and approximate plaintext size remain
 visible. The current format also has no version or magic field. Future versions
 can use AEAD (Authenticated Encryption with Associated Data) easily on top.
+
+\section{Malformed input and resource limits}
+
+\paragraph{Malformed input}
+Malformed or very large inputs can cause out-of-bounds access or excessive
+memory use if lengths are trusted. Bundle deserialization checks that the
+header and tag are present, checks the ciphertext against the 10,000,000-byte
+limit, and allocates only after those checks.
+
+The serialized format is parsed field by field rather than by casting file
+bytes to a C structure.
+
+\paragraph{Limitation of input size}
+Being AES a block cipher, it introduces padding: this means that there should
+be a tolerance in the size of the ciphertext on top of that of the maximum accepted
+plaintext; currently, this is not implemented.
+
+\paragraph{Limitation of input from stream}
+Taking input from a stream presents some risks that are not fully handled by
+the internals of the API, mainly because of the assumption of such stream not
+coming from a network socket or equivalently from a slowly yielding pipe.
