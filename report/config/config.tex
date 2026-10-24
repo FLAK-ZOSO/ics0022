@@ -6,19 +6,19 @@
 % Estonian title page will be generated automatically       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newcommand{\lang}{EST / ENG} % Choose the language of the thesis (Estonian is the default one)
+\newcommand{\lang}{ENG} % English is the primary language; the template also creates an Estonian title page.
 
 % If your work is in Estonian, English title is used for abstract. Don't forget to add it here!
 % For English thesis is vice versa
-\newcommand{\thesisTitleEng}{[Thesis Title]} % variable with thesis title
-\newcommand{\thesisTitleEst}{[Lõputöö pealkiri]} % Title in Estonian
+\newcommand{\thesisTitleEng}{Fiorino: An Encrypted File Manager} % variable with thesis title
+\newcommand{\thesisTitleEst}{Fiorino: krüpteeritud failihaldur} % Title in Estonian
 
 % Choose your thesis
-\newcommand{\thesisType}{Bachelor's Thesis / Master's Thesis}
+\newcommand{\thesisType}{ICS0022 Project Report}
 
 % Thesis author
-\newcommand{\authorName}{[Author name]}
-\newcommand{\studentcode}{[Student Code]}
+\newcommand{\authorName}{Mattia Marchese}
+\newcommand{\studentcode}{243015IVSB}
 
 % Second author. If you are the sole author, leave it as it is
 \newcommand{\authorNameTwo}{[Second Author name]}
@@ -45,8 +45,8 @@
 \newcommand{\signatureDate}{\ddmmyyyydate\today}
 
 % PDF Metadata
-\newcommand{\version}{0.1 version}
-\newcommand{\keywords}{Important, comma, separated, keywords, applicable, to, your, thesis}
+\newcommand{\version}{1.0}
+\newcommand{\keywords}{secure programming, file encryption, AES-256-GCM, OpenSSL, C17}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %            DO NOT EDIT BELOW THIS LINE                    %
@@ -97,13 +97,15 @@
   {\newcommand{\studentcodeThreeEst}{[Üliõpilaskood]}}
   {\newcommand{\studentcodeThreeEst}{\studentcodeThree}}
 
-\ifthenelse {\equal{\thesisType}{Bachelor's Thesis}}
+\ifthenelse {\equal{\thesisType}{ICS0022 Project Report}}
+      {\newcommand{\thesisTypeEst}{ICS0022 kursuseprojekt}}
+      {\ifthenelse {\equal{\thesisType}{Bachelor's Thesis}}
       {\newcommand{\thesisTypeEst}{Bakalaureusetöö}}
       {
         \ifthenelse {\equal{\thesisType}{Master's Thesis}}
           {\newcommand{\thesisTypeEst}{Magistritöö}}
           {\newcommand{\thesisTypeEst}{Bakalaureusetöö / Magistritöö}}
-      }
+      }}
 
 \newcommand{\supervisor}{Supervisor}
 \newcommand{\supervisorEst}{Juhendaja}

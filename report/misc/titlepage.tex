@@ -14,7 +14,7 @@
     \begin{center}
     
     % Adds authors names to the title page
-    \authorName~ \studentcode \\
+    \ifthenelse{\equal{\studentcode}{}}{\authorName\\}{\authorName~\studentcode\\}
     \ifthenelse{\equal{\authorNameTwo}{[Second Author name]}}{}{\authorNameTwo\ \studentcodeTwo\\} % If the second author’s name is not provided, this line is ignored
     \ifthenelse{\equal{\authorNameThree}{[Third Author name]}}{}{\authorNameThree\ \studentcodeThree\\} % If the third author’s name is not provided, this line is ignored
     \vspace*{1.5 cm}
@@ -29,12 +29,13 @@
     
     \vspace*{0.6 cm}
     
-    \begin{flushright} % The following content will be aligned to the right
-    % Adds supervisors to the title page
-    \supervisor: \supervisorName\\ \supervisortitle\\
-    \vspace*{0.2 cm}
-    \ifthenelse{\equal{\cosupervisorName}{[Co-Supervisor's Name]}}{}{\cosupervisor: \cosupervisorName\\\cosupervisortitle} % If the cosupervisor’s name is not provided, this line is ignored
-    \end{flushright}
+    \ifthenelse{\equal{\supervisorName}{[Supervisor's Name]}}{}{%
+        \begin{flushright}
+        \supervisor: \supervisorName\\ \supervisortitle\\
+        \vspace*{0.2 cm}
+        \ifthenelse{\equal{\cosupervisorName}{[Co-Supervisor's Name]}}{}{\cosupervisor: \cosupervisorName\\\cosupervisortitle}
+        \end{flushright}
+    }
     \vfill % Fills the remaining vertical space on the page, pushing any content below it to the bottom of the page
     
     Tallinn \Year % Adds city and year to the title page
@@ -56,7 +57,7 @@
 \begin{center}
 
 % Adds authors names to the title page
-\authorNameEst~ \studentcodeEst \\
+\ifthenelse{\equal{\studentcodeEst}{}}{\authorNameEst\\}{\authorNameEst~\studentcodeEst\\}
 \ifthenelse{\equal{\authorNameTwoEst}{[Teise autori nimi]}}{}{\authorNameTwoEst\ \studentcodeTwoEst\\} % If the second author’s name is not provided, this line is ignored
 \ifthenelse{\equal{\authorNameThreeEst}{[Kolmanda autori nimi]}}{}{\authorNameThreeEst\ \studentcodeThreeEst\\} % If the third author’s name is not provided, this line is ignored
 \vspace*{1.5 cm}
@@ -71,12 +72,13 @@
 
 \vspace*{0.6 cm}
 
-\begin{flushright} % The following content will be aligned to the right
-% Adds supervisors to the title page
-\supervisorEst: \supervisorNameEst\\ \supervisortitleEst\\
-\vspace*{0.2 cm}
-\ifthenelse{\equal{\cosupervisorNameEst}{[Kaasjuhendaja nimi]}}{}{\cosupervisorEst: \cosupervisorNameEst\\\cosupervisortitleEst} % If the cosupervisor’s name is not provided, this line is ignored
-\end{flushright}
+\ifthenelse{\equal{\supervisorNameEst}{[Juhendaja nimi]}}{}{%
+    \begin{flushright}
+    \supervisorEst: \supervisorNameEst\\ \supervisortitleEst\\
+    \vspace*{0.2 cm}
+    \ifthenelse{\equal{\cosupervisorNameEst}{[Kaasjuhendaja nimi]}}{}{\cosupervisorEst: \cosupervisorNameEst\\\cosupervisortitleEst}
+    \end{flushright}
+}
 \vfill % Fills the remaining vertical space on the page, pushing any content below it to the bottom of the page
 
 Tallinn \Year % Adds city and year to the title page
