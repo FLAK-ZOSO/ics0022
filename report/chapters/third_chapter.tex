@@ -29,6 +29,16 @@ being dynamically linked against all the others.
 This brings quite some advantages for e.g. a portable client where its library is
 not commonly installed, without the need of bundling the whole glibc or openssl.
 
+\paragraph{The security risk of RPATH/RUNPATH}
+
+I learned about the security issue with \texttt{@rpath} (i.e. library loading from
+a path relative to the execution one): running from a publicly writeable directory
+will overwrite the dynamic loader path with one relative to said directory, thus
+exposing the binary to loading a malicious library from there.
+
+The usage of the build variable \texttt{\$ORIGIN} is preferrable, albeit still
+not considered a best practice\cite{stackexchange-rpath-security}.
+
 \section{Challenges encountered}
 
 \paragraph{Error conventions}
