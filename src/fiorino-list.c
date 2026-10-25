@@ -55,11 +55,11 @@ int main(int argc, char** argv) {
     int list_rc = fiorino_list(&vault_, stdout);
     switch (list_rc) {
         case FIORINO_AUTHENTICATION_FAILED: {
-            fprintf(stderr, "Authentication to the vault '%s' failed", vault);
+            fprintf(stderr, "Authentication to the vault '%s' failed.\n", vault);
             break;
         }
         case 1: {
-            fprintf(stderr, "Failed to list the contents of the vault '%s' failed", vault);
+            fprintf(stderr, "Could not list the contents of the vault '%s'.\n", vault);
             break;
         }
     }
