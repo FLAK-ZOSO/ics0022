@@ -43,6 +43,16 @@ My plan was initially to use AES-CBC as a cipher and compute an HMAC on the
 ciphertext: while being cryptographically valid, this would have made the
 implementation more complicated. For this reason I moved onto AES-GCM.
 
+\paragraph{Cleanup paths within functions}
+
+Duplicating the whole set of cleanup instructions for each failure path hinders
+maintainability of the codebase through, precisely, code duplication.
+
+At the same time, having a single cleanup section can lead to double free weaknesses
+as well as \texttt{free} calls on uninitialized pointers.
+
+This taught me that \texttt{goto} semantics aren't properly dead in C programming.
+
 \section{LLM usage disclaimer}
 
 I used GPT-6 for the following tasks...
