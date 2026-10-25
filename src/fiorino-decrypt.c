@@ -8,6 +8,7 @@
 #include <string.h>
 
 int main(int argc, char** argv) {
+    fiorino_cli_init_logging("fiorino-decrypt");
     if (fiorino_cli_install_signal_handler(NULL) == -1) {
         fiorino_log_errno(FIORINO_LOG_WARNING, "could not install", "signal handlers");
         fprintf(stderr, "Warning: could not install signal handlers");
@@ -43,7 +44,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
 
     char passphrase[100] = {0};
-    fiorino_log_set_threshold(FIORINO_LOG_INFO);
     int password_result = fiorino_read_password(passphrase, sizeof passphrase, 0);
     if (fiorino_cli_raised()) {
         fiorino_cleanse(passphrase, sizeof passphrase);

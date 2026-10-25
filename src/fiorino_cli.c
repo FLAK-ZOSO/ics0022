@@ -1,9 +1,18 @@
 #include <fiorino_cli.h>
+#include <fiorino_log.h>
 #include <signal.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <syslog.h>
 
 static volatile sig_atomic_t signo;
 static volatile sig_atomic_t interrupted;
+
+void fiorino_cli_init_logging(const char* tag) {
+    openlog(tag, LOG_PID, LOG_USER);
+    fiorino_log_set_threshold(FIORINO_LOG_INFO);
+    fprintf(stderr, "Read Fiorino logs with: journalctl -t %s\n", tag);
+}
 
 static void handler(int signo_) {
     interrupted = 1;
