@@ -12,6 +12,13 @@ preliminary resolution of at the beginning of the execution.
 I learned about how not to follow symlinks using glibc functions; overall, I read a
 whole lot of manual pages that I had never even gotten close to before.
 
+\paragraph{File locks}
+
+I had never before heard about file locks; now I know they exist, they are advisory
+only and they come in \href{https://gavv.net/articles/file-locks/}{different flavours}
+depending on the target platform; I ended up using BSD locks (\texttt{flock} from
+\texttt{sys/file.h}).
+
 \section{Challenges encountered}
 
 \paragraph{Error conventions}
