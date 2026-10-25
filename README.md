@@ -22,7 +22,10 @@ In this example, the first two files are encrypted under one primary key, and th
 Only Linux systems are supported.
 
 > [!NOTE]
-> Support for other POSIX-adjacent platforms is a naturally consequent feature.
+> The code uses POSIX.1-2008 interfaces, but also uses `flock()` for advisory
+> file locking. `flock()` is a BSD/Linux interface, not part of POSIX.1-2008;
+> supporting other systems would require replacing or adapting that locking
+> code and validating the result.
 
 ## Build and usage
 

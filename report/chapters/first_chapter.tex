@@ -3,8 +3,10 @@ This chapter covers the implementation of Fiorino.
 \section{Architecture}
 
 Fiorino is written in C17 and uses OpenSSL 3.x for cryptography and password
-input. The current build and supported command-line environment are GNU/Linux,
-while the source code works on any POSIX.1-2008 platform.
+input. GNU/Linux is the supported platform. The source uses POSIX.1-2008
+interfaces together with OpenSSL 3.x and the BSD/Linux \texttt{flock}
+interface for advisory file locking. Since \texttt{flock} is not part of
+POSIX.1-2008, compatibility with other POSIX systems is not claimed.
 
 \paragraph{The CLI programs}
 The project is divided into a shared C library and four command-line programs:
