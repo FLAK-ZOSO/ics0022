@@ -41,7 +41,9 @@ but are technically not Fiorino-specific, for purposes such as...
 \end{itemize}
 
 The encryption API accepts an already-open \texttt{FILE *} and a separate
-output basename.
+output basename. The CLI accepts an input path, but stores only its basename
+in the flat vault directory; two input paths with the same basename target the
+same encrypted entry.
 
 \section{Vaults and passwords}
 

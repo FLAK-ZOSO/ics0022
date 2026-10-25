@@ -66,6 +66,10 @@ Encrypt a file into a vault. The password is entered twice:
 ./build/fiorino-encrypt -v default -f file.txt
 ```
 
+`-f` accepts a path, so `-f report/main.pdf` reads that file and stores it in
+the vault as `main.pdf.enc`. Vaults are flat: only the input basename is kept,
+so another input with the same basename replaces that encrypted entry.
+
 Decrypt a vault file into the current directory. The password is entered once:
 
 ```bash

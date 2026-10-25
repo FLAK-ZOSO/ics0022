@@ -37,6 +37,12 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Filename must be specified, use -f to do so.\n");
         return EXIT_FAILURE;
     }
+    char* output_name = strrchr(filename, '/');
+    output_name = output_name == NULL ? filename : output_name + 1;
+    if (output_name[0] == '\0') {
+        fprintf(stderr, "Input path must name a file.\n");
+        return EXIT_FAILURE;
+    }
 
     if (fprintf(stderr,
                 "Encrypting '%s' into vault '%s'; on success, any existing encrypted copy will be replaced.\n",
@@ -70,7 +76,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     struct FileToEncrypt file_ = {
-        file, filename
+        file, output_name
     };
 
     int encrypt_result = fiorino_encrypt_stream(&vault_, &file_);
@@ -94,7 +100,7 @@ int main(int argc, char** argv) {
 
     fiorino_cleanse(passphrase, sizeof passphrase);
     printf("Your file has been encrypted successfully to the vault '%s' as '%s'\n",
-            vault, filename);
+            vault, output_name);
     int output_failed = 0;
     if (fflush(stdout) == EOF || ferror(stdout))
         output_failed = 1;
