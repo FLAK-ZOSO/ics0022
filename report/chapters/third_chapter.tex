@@ -19,6 +19,16 @@ only and they come in \href{https://gavv.net/articles/file-locks/}{different fla
 depending on the target platform; I ended up using BSD locks (\texttt{flock} from
 \texttt{sys/file.h}).
 
+\paragraph{Bundling a library statically}
+
+For a long time I thought \textit{statically linking} was a binary characteristic of
+a binary: either statically linked or dynamically linked. What I learned during this
+project is that a binary can be linked statically against one library while
+being dynamically linked against all the others.
+
+This brings quite some advantages for e.g. a portable client where its library is
+not commonly installed, without the need of bundling the whole glibc or openssl.
+
 \section{Challenges encountered}
 
 \paragraph{Error conventions}
