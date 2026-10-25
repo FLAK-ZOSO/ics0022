@@ -37,7 +37,11 @@ concerning error handling, one example being OpenSSL returning 1 for success and
 failure, and another being \texttt{errno}-based libraries and those relying on
 "custom-internal-error-storage" systems so to call them.
 
-% TODO
+\paragraph{Authentication of the ciphertext}
+
+My plan was initially to use AES-CBC as a cipher and compute an HMAC on the
+ciphertext: while being cryptographically valid, this would have made the
+implementation more complicated. For this reason I moved onto AES-GCM.
 
 \section{LLM usage disclaimer}
 
