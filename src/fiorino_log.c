@@ -49,12 +49,12 @@ static void log_vmessage(enum FiorinoLogLevel level,
         return;
 
     char stack_message[512];
-    va_list copy;
-    va_copy(copy, args);
-    int length = vsnprintf(stack_message, sizeof stack_message, format, args);
-    va_end(args);
+    va_list format_args;
+    va_copy(format_args, args);
+    int length = vsnprintf(stack_message, sizeof stack_message,
+                           format, format_args);
+    va_end(format_args);
     if (length < 0) {
-        va_end(copy);
         errno = saved_errno;
         return;
     }
@@ -62,12 +62,19 @@ static void log_vmessage(enum FiorinoLogLevel level,
     char* message = stack_message;
     if ((size_t)length >= sizeof stack_message) {
         message = malloc((size_t)length + 1);
-        if (message != NULL)
-            vsnprintf(message, (size_t)length + 1, format, copy);
-        else
+        if (message != NULL) {
+            va_copy(format_args, args);
+            int formatted = vsnprintf(message, (size_t)length + 1,
+                                      format, format_args);
+            va_end(format_args);
+            if (formatted < 0) {
+                free(message);
+                message = stack_message;
+            }
+        } else {
             message = stack_message;
+        }
     }
-    va_end(copy);
 
     if (level == FIORINO_LOG_DEBUG && source_file != NULL) {
         syslog(LOG_USER | level, "fiorino: %s:%d: %s",
