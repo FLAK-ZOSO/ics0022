@@ -38,7 +38,7 @@ enum FiorinoLogLevel fiorino_log_get_threshold(void) {
 }
 
 
-void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
+static void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
                             const char* format, va_list args) {
     int saved_errno = errno;
     int limit = atomic_load(&threshold);
