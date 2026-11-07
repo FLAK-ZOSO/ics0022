@@ -20,3 +20,17 @@ enum FiorinoLogLevel fiorino_log_get_threshold(void);
  */
 void fiorino_log_message(enum FiorinoLogLevel level, const char* format, ...);
 void fiorino_log_errno(enum FiorinoLogLevel level, const char* action, const char* path);
+void fiorino_log_message_at(enum FiorinoLogLevel level,
+                            const char* source_file, int source_line,
+                            const char* format, ...);
+void fiorino_log_errno_at(enum FiorinoLogLevel level,
+                          const char* source_file, int source_line,
+                          const char* action, const char* path);
+
+/* Add call-site location automatically; the logger prints it for DEBUG only.
+ * The original function symbols remain available for binary compatibility.
+ */
+#define fiorino_log_message(level, ...) \
+    fiorino_log_message_at((level), __FILE__, __LINE__, __VA_ARGS__)
+#define fiorino_log_errno(level, action, path) \
+    fiorino_log_errno_at((level), __FILE__, __LINE__, (action), (path))
