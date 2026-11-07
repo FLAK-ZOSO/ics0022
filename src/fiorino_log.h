@@ -20,3 +20,13 @@ enum FiorinoLogLevel fiorino_log_get_threshold(void);
  */
 void fiorino_log_message(enum FiorinoLogLevel level, const char* format, ...);
 void fiorino_log_errno(enum FiorinoLogLevel level, const char* action, const char* path);
+
+void fiorino_log_message_at(enum FiorinoLogLevel level, const char* file, int line,
+                            const char* format, ...);
+void fiorino_log_errno_at(enum FiorinoLogLevel level, const char* file, int line,
+                            const char* action, const char* path);
+
+#define fiorino_log_message(level, ...) \
+    fiorino_log_message_at(level, __FILE__, __LINE__, __VA_ARGS__)
+#define fiorino_log_errno(level, ...) \
+    fiorino_log_errno_at(level, __FILE__, __LINE__, __VA_ARGS__)
