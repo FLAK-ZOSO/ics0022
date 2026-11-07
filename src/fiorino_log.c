@@ -45,13 +45,12 @@ void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
     if (!valid_level(level) || limit == FIORINO_LOG_OFF || level > limit)
         return;
 
+    va_list format_args;
     char stack_message[512];
-    va_list copy;
-    va_copy(copy, args);
-    int length = vsnprintf(stack_message, sizeof stack_message, format, args);
-    va_end(args);
+    va_copy(format_args, args);
+    int length = vsnprintf(stack_message, sizeof stack_message, format, format_args);
+    va_end(format_args);
     if (length < 0) {
-        va_end(copy);
         errno = saved_errno;
         return;
     }
@@ -59,12 +58,18 @@ void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
     char* message = stack_message;
     if ((size_t)length >= sizeof stack_message) {
         message = malloc((size_t)length + 1);
-        if (message != NULL)
-            vsnprintf(message, (size_t)length + 1, format, copy);
-        else
+        if (message != NULL) {
+            va_copy(format_args, args);
+            length = vsnprintf(message, (size_t)length + 1, format, format_args);
+            va_end(format_args);
+            if (length < 0) {
+                message = stack_message;
+                errno = saved_errno;
+            }
+        } else {
             message = stack_message;
+        }
     }
-    va_end(copy);
 
     if (level == FIORINO_LOG_DEBUG && file) {
         syslog(LOG_USER | level, "fiorino: %s:%d: %s",
@@ -103,7 +108,7 @@ void fiorino_log_message(enum FiorinoLogLevel level, const char* format, ...) {
     va_list args;
     va_start(args);
     fiorino_log_generic(level, NULL, 0, format, args);
-    // va_end(args);
+    va_end(args);
 }
 void fiorino_log_errno(enum FiorinoLogLevel level, const char* action, const char* path) {
     fiorino_log_errno_at(level, NULL, 0, action, path);
