@@ -86,7 +86,7 @@ void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
 void fiorino_log_message_at(enum FiorinoLogLevel level, const char* file, int line,
                             const char* format, ...) {
     va_list args;
-    va_start(args);
+    va_start(args, format);
     fiorino_log_generic(level, file, line, format, args);
     va_end(args);
 }
@@ -106,7 +106,7 @@ void fiorino_log_errno_at(enum FiorinoLogLevel level, const char* file, int line
 
 void fiorino_log_message(enum FiorinoLogLevel level, const char* format, ...) {
     va_list args;
-    va_start(args);
+    va_start(args, format);
     fiorino_log_generic(level, NULL, 0, format, args);
     va_end(args);
 }
