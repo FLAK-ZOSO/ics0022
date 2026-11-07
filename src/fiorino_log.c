@@ -63,8 +63,8 @@ void fiorino_log_generic(enum FiorinoLogLevel level, const char* file, int line,
             length = vsnprintf(message, (size_t)length + 1, format, format_args);
             va_end(format_args);
             if (length < 0) {
+                free(message);
                 message = stack_message;
-                errno = saved_errno;
             }
         } else {
             message = stack_message;
