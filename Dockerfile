@@ -12,3 +12,4 @@ COPY --from=build /src/build/fiorino-encrypt /src/build/fiorino-decrypt /src/bui
 RUN ldconfig && mkdir -p /home/fiorino/.fiorino /work
 ENV HOME=/home/fiorino
 WORKDIR /work
+CMD ["/bin/bash"]
