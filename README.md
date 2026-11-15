@@ -87,5 +87,8 @@ make test
 
 ### Full installation
 
-> [!WARNING]
-> GNU Make targets for installation are not available yet, and some twists to rpaths and include directories will be needed by then.
+```bash
+make install-strip
+```
+
+Consult the Makefile for more targets among which `install`.
