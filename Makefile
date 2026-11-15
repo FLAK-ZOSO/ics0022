@@ -43,7 +43,7 @@ sdist:
 	mkdir -p dist
 	tar -czf dist/$(DIST_NAME).tar.gz \
 		--transform='s,^,$(DIST_NAME)/,' \
-		Makefile README.md DESIGN.md CHECKPOINTS.md src tests images
+		Makefile Dockerfile README.md DESIGN.md CHECKPOINTS.md src tests images
 
 dist: all cli
 	mkdir -p dist
