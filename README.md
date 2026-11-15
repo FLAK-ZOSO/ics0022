@@ -85,6 +85,34 @@ Run the test suite with:
 make test
 ```
 
+### Container
+
+> [!WARNING]
+> This part of the project is not part of the project, it was slopped on the last moment just for ease of testing by the lecturer.
+
+Build the image and start a shell with your current directory and Fiorino vault mounted:
+
+```bash
+docker build -t fiorino .
+mkdir -p "$HOME/.fiorino"
+docker run --rm -it --user "$(id -u):$(id -g)" \
+  -e HOME=/home/fiorino -v "$PWD:/work" \
+  -v "$HOME/.fiorino:/home/fiorino/.fiorino" \
+  fiorino
+```
+
+Then, inside the container, try the commands in sequence:
+
+```bash
+echo 'container test' > sample.txt
+fiorino-encrypt -v container-test -f sample.txt
+fiorino-list -v container-test
+mkdir output && cd output
+fiorino-decrypt -v container-test -f sample.txt
+fiorino-delete -v container-test -f sample.txt
+exit
+```
+
 ### Full installation
 
 ```bash
